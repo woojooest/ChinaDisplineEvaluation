@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discipline Evaluation Results — StudyChina</title>
+<style>
+  :root {
+    --bg: #faf8f3; --card: #fff; --ink: #1a1a1a; --muted: #6b6b6b;
+    --line: #ece8df; --crimson: #c0142c; --gold: #b8860b;
+    --serif: Georgia, "Times New Roman", "Songti SC", serif;
+    --sans: -apple-system, "Segoe UI", "PingFang SC", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--sans); color: var(--ink); background: var(--bg); }
+
+  header { background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center;
+    gap:14px; padding:16px 32px; position:sticky; top:0; z-index:10; }
+  .logo { font-family:var(--serif); font-size:1.5rem; display:flex; align-items:center; gap:10px; }
+  .logo .dot { width:26px; height:26px; border-radius:50%; border:3px solid var(--crimson); position:relative; }
+  .logo .dot::after { content:""; position:absolute; inset:4px; border-radius:50%; border:1.5px solid var(--crimson); }
+  .logo b { font-weight:800; }
+  nav.top { margin-left:18px; display:flex; gap:26px; font-size:.82rem; font-weight:700; letter-spacing:.04em; color:#333; }
+  nav.top .active { color:var(--crimson); }
+
+  .intro { max-width:1180px; margin:36px auto 8px; padding:0 32px; }
+  .eyebrow { display:flex; align-items:center; gap:14px; font-weight:700; letter-spacing:.12em;
+    font-size:.82rem; text-transform:uppercase; }
+  .eyebrow::before { content:""; width:46px; height:2px; background:var(--crimson); }
+  .intro h1 { font-family:var(--serif); font-size:2rem; margin:14px 0 0; }
+  .intro p { color:var(--muted); max-width:760px; line-height:1.5; }
+
+  .wrap { max-width:1180px; margin:18px auto 60px; padding:0 32px;
+    display:grid; grid-template-columns:220px 320px 1fr; gap:24px; align-items:start; }
+  @media (max-width:900px) { .wrap { grid-template-columns:1fr; } }
+
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04); overflow:hidden; }
+  .panel h3 { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+    margin:0; padding:16px 18px 10px; }
+
+  .nav-list button { display:block; width:100%; text-align:left; border:0; background:none; cursor:pointer;
+    font:inherit; font-weight:600; padding:13px 18px; color:var(--ink); border-left:3px solid transparent; }
+  .nav-list button .zh { color:var(--muted); font-weight:400; font-size:.82rem; margin-left:6px; }
+  .nav-list button:hover { background:#faf8f3; }
+  .nav-list button[aria-selected="true"] { color:var(--crimson); border-left-color:var(--crimson); background:#fdf4f5; }
+
+  .subj-list { max-height:72vh; overflow-y:auto; }
+  .subj-list button { display:block; width:100%; text-align:left; border:0; background:none; cursor:pointer;
+    font:inherit; padding:12px 18px; color:#333; border-bottom:1px solid #f3f0e9; }
+  .subj-list button .code { color:var(--muted); font-variant-numeric:tabular-nums; margin-right:8px; }
+  .subj-list button .zh { color:var(--muted); font-size:.8rem; margin-left:6px; }
+  .subj-list button:hover { background:#faf8f3; }
+  .subj-list button[aria-selected="true"] { background:#fdf4f5; color:var(--crimson); font-weight:600; }
+
+  .detail { padding:26px 30px 30px; }
+  .detail .loc { display:flex; align-items:center; gap:7px; color:var(--crimson); font-weight:700;
+    letter-spacing:.06em; font-size:.78rem; text-transform:uppercase; }
+  .detail h2 { font-family:var(--serif); font-size:1.9rem; margin:8px 0 2px; }
+  .detail .zh-title { color:var(--muted); margin:0 0 4px; font-size:1.05rem; }
+  .detail .count { color:var(--muted); margin:6px 0 22px; }
+  .placeholder { color:var(--muted); padding:50px 4px; text-align:center; }
+
+  table { border-collapse:collapse; width:100%; }
+  thead th { text-align:left; padding:10px 14px; font-size:.72rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); border-bottom:2px solid var(--line); }
+  thead th:first-child { width:120px; text-align:center; }
+  tbody tr { border-bottom:1px solid #f3f0e9; }
+  td { padding:11px 14px; vertical-align:middle; }
+  td.grade { text-align:center; }
+  td.code { width:84px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  td.inst { font-family:var(--serif); font-size:1.05rem; }
+  td.inst .zh { font-family:var(--sans); color:var(--muted); font-size:.82rem; margin-left:8px; }
+
+  .pill { display:inline-block; min-width:46px; text-align:center; padding:5px 12px; border-radius:999px;
+    font-weight:700; font-size:.95rem; border:1px solid; }
+  .pill.A { color:var(--crimson); border-color:var(--crimson); background:#fdf4f5; }
+  .pill.B { color:#1d4ed8; border-color:#c7d4f7; background:#f3f6ff; }
+  .pill.C { color:var(--gold); border-color:#eadfc0; background:#fbf6e9; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo"><span class="dot"></span><span><b>Study</b>China<span style="color:var(--crimson)">.</span></span></div>
+    <nav class="top"><span class="active">China Displine Evaluation</span></nav>
+  </header>
+
+  <div class="intro">
+    <div class="eyebrow">Discipline Evaluation · 4th Round</div>
+    <h1>Evaluation Results for Colleges and Universities</h1>
+    <p>Choose a broad category, then a discipline, to see institutions ranked by their overall result. Schools sharing a grade are sequenced by institution code.</p>
+  </div>
+
+  <div class="wrap">
+    <div class="panel"><h3>Category</h3><div class="nav-list" id="nav"></div></div>
+    <div class="panel"><h3>Discipline</h3><div class="subj-list" id="subjects"></div></div>
+    <div class="panel detail" id="detail"><p class="placeholder" id="status">Loading data…</p></div>
+  </div>
+
+<script>
+let DATA = null;
+const $nav = document.getElementById('nav');
+const $subjects = document.getElementById('subjects');
+const $detail = document.getElementById('detail');
+const $status = document.getElementById('status');
+
+const GRADE_ORDER = ['A+','A','A-','B+','B','B-','C+','C','C-'];
+const gradeRank = g => { const i = GRADE_ORDER.indexOf(g); return i === -1 ? 99 : i; };
+const tierClass = g => (g && 'ABC'.includes(g[0])) ? g[0] : '';
+
+fetch('./data/eval.json')
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(json => { DATA = json; renderNav(); })
+  .catch(e => { $status.textContent = 'Failed to load data: ' + e.message; });
+
+function renderNav() {
+  $nav.innerHTML = '';
+  Object.entries(DATA).forEach(([broad, node], i) => {
+    const b = document.createElement('button');
+    b.innerHTML = `${node.name_en || broad}<span class="zh">${node.name_zh || ''}</span>`;
+    b.onclick = () => selectBroad(broad, b);
+    $nav.appendChild(b);
+    if (i === 0) selectBroad(broad, b);
+  });
+}
+
+function sortedSubjects(node) {
+  return Object.values(node.subjects || {})
+    .sort((a, b) => (a.secondary_subject_code || '').localeCompare(b.secondary_subject_code || ''));
+}
+
+function selectBroad(broad, btn) {
+  [...$nav.children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  $subjects.innerHTML = '';
+  for (const s of sortedSubjects(DATA[broad])) {
+    const b = document.createElement('button');
+    b.innerHTML = `<span class="code">${s.secondary_subject_code}</span>${s.name_en || s.name_zh}` +
+                  (s.name_zh ? `<span class="zh">${s.name_zh}</span>` : '');
+    b.onclick = () => selectSubject(s, b);
+    $subjects.appendChild(b);
+  }
+  $detail.innerHTML = '<p class="placeholder">Select a discipline to view results.</p>';
+}
+
+function selectSubject(s, btn) {
+  [...$subjects.children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  const list = s.list || [];
+  const rows = [...list].sort((a, b) => {
+    const d = gradeRank(a.evaluation_result) - gradeRank(b.evaluation_result);
+    return d !== 0 ? d : (a.institution_code || '').localeCompare(b.institution_code || '');
+  });
+
+  const groups = [];
+  for (const r of rows) {
+    const last = groups[groups.length - 1];
+    if (last && last.grade === r.evaluation_result) last.items.push(r);
+    else groups.push({ grade: r.evaluation_result, items: [r] });
+  }
+
+  const body = groups.map(g => g.items.map((r, idx) => `
+    <tr>
+      ${idx === 0 ? `<td class="grade" rowspan="${g.items.length}"><span class="pill ${tierClass(g.grade)}">${g.grade}</span></td>` : ''}
+      <td class="code">${r.institution_code || ''}</td>
+      <td class="inst">${r.institution_name_en || r.institution_name || ''}` +
+        (r.institution_name_en && r.institution_name ? `<span class="zh">${r.institution_name}</span>` : '') +
+      `</td>
+    </tr>`).join('')).join('');
+
+  $detail.innerHTML = `
+    <div class="loc">&#9733; ${s.secondary_subject_code} · Overall ranking</div>
+    <h2>${s.name_en || s.name_zh}</h2>
+    ${s.name_zh && s.name_en ? `<p class="zh-title">${s.name_zh}</p>` : ''}
+    <p class="count">${list.length} institutions evaluated · same grade sequenced by code</p>
+    <table>
+      <thead><tr><th>Result</th><th colspan="2">Institution</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+</script>
+</body>
+</html>
