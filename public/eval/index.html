@@ -58,7 +58,6 @@
   .detail .loc { display:flex; align-items:center; gap:7px; color:var(--crimson); font-weight:700;
     letter-spacing:.06em; font-size:.78rem; text-transform:uppercase; }
   .detail h2 { font-family:var(--serif); font-size:1.9rem; margin:8px 0 2px; }
-  .detail .zh-title { color:var(--muted); margin:0 0 4px; font-size:1.05rem; }
   .detail .count { color:var(--muted); margin:6px 0 22px; }
   .placeholder { color:var(--muted); padding:50px 4px; text-align:center; }
 
@@ -78,6 +77,10 @@
   .pill.A { color:var(--crimson); border-color:var(--crimson); background:#fdf4f5; }
   .pill.B { color:#1d4ed8; border-color:#c7d4f7; background:#f3f6ff; }
   .pill.C { color:var(--gold); border-color:#eadfc0; background:#fbf6e9; }
+
+  .source-note { max-width:1180px; margin:0 auto 60px; padding:18px 32px 0;
+    color:var(--muted); font-size:.82rem; line-height:1.55; border-top:1px solid var(--line); }
+  .source-note strong { color:#444; font-weight:600; }
 </style>
 </head>
 <body>
@@ -96,6 +99,10 @@
     <div class="panel"><h3>Category</h3><div class="nav-list" id="nav"></div></div>
     <div class="panel"><h3>Discipline</h3><div class="subj-list" id="subjects"></div></div>
     <div class="panel detail" id="detail"><p class="placeholder" id="status">Loading data…</p></div>
+  </div>
+
+  <div class="source-note">
+    <strong>Data source:</strong> Fourth Round of Discipline Evaluation (2016), conducted by the China Academic Degrees and Graduate Education Development Center (CDGDC). For reference only. Results from subsequent evaluation rounds have not been publicly released.
   </div>
 
 <script>
@@ -118,7 +125,7 @@ function renderNav() {
   $nav.innerHTML = '';
   Object.entries(DATA).forEach(([broad, node], i) => {
     const b = document.createElement('button');
-    b.innerHTML = `${node.name_en || broad}<span class="zh">${node.name_zh || ''}</span>`;
+    b.textContent = node.name_en || node.name_zh || broad;
     b.onclick = () => selectBroad(broad, b);
     $nav.appendChild(b);
     if (i === 0) selectBroad(broad, b);
@@ -135,8 +142,7 @@ function selectBroad(broad, btn) {
   $subjects.innerHTML = '';
   for (const s of sortedSubjects(DATA[broad])) {
     const b = document.createElement('button');
-    b.innerHTML = `<span class="code">${s.secondary_subject_code}</span>${s.name_en || s.name_zh}` +
-                  (s.name_zh ? `<span class="zh">${s.name_zh}</span>` : '');
+    b.innerHTML = `<span class="code">${s.secondary_subject_code}</span>${s.name_en || s.name_zh}`;
     b.onclick = () => selectSubject(s, b);
     $subjects.appendChild(b);
   }
@@ -162,15 +168,12 @@ function selectSubject(s, btn) {
     <tr>
       ${idx === 0 ? `<td class="grade" rowspan="${g.items.length}"><span class="pill ${tierClass(g.grade)}">${g.grade}</span></td>` : ''}
       <td class="code">${r.institution_code || ''}</td>
-      <td class="inst">${r.institution_name_en || r.institution_name || ''}` +
-        (r.institution_name_en && r.institution_name ? `<span class="zh">${r.institution_name}</span>` : '') +
-      `</td>
+      <td class="inst">${r.institution_name_en || r.institution_name || ''}</td>
     </tr>`).join('')).join('');
 
   $detail.innerHTML = `
     <div class="loc">&#9733; ${s.secondary_subject_code} · Overall ranking</div>
     <h2>${s.name_en || s.name_zh}</h2>
-    ${s.name_zh && s.name_en ? `<p class="zh-title">${s.name_zh}</p>` : ''}
     <p class="count">${list.length} institutions evaluated · same grade sequenced by code</p>
     <table>
       <thead><tr><th>Result</th><th colspan="2">Institution</th></tr></thead>
