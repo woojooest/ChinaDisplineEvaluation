@@ -260,8 +260,8 @@ const SEL = {                                  // current source/year per board
   subject:    { source: 'cde', year: null },
 };
 const CACHE = {};                              // url -> parsed JSON
-let uniShowDetails = false;
-let qsShowDetails  = false;
+let showScores = false;          // global: "Show Score Details" toggle (shared across boards/sources)
+let _subjectRerender = null;     // re-renders the current subject detail when scores toggle
 
 // Each distinct dataset has its OWN url endpoint.
 function datasetUrl(board, source, year) {
@@ -366,8 +366,9 @@ function buildYearSeg(elId, board) {
 function render() {
   const src = SEL[BOARD].source;
   document.body.className = 'src-' + src;
-  document.body.classList.toggle('uni-details', BOARD === 'university' && uniShowDetails);
-  document.body.classList.toggle('qs-details',  BOARD === 'subject' && qsShowDetails);
+  // Widen the page only when many indicator columns are revealed (QS sources).
+  document.body.classList.toggle('uni-details', BOARD === 'university' && showScores && src === 'qs');
+  document.body.classList.toggle('qs-details',  BOARD === 'subject' && showScores && src === 'qs');
 
   // active board tab
   $('board-tabs').querySelectorAll('button')
@@ -461,14 +462,16 @@ async function renderUniversity() {
   try { data = await loadJSON(datasetUrl('university', s.source, s.year)); }
   catch (e) { panel.innerHTML = `<p class="placeholder">Failed to load: ${e.message}</p>`; return; }
 
+  // Any university dataset with a score (QS overall+indicators, US News Global Score) gets the toggle.
+  const hasScores = data.list.some(r => r.overall != null) || (data.indicators || []).length > 0;
   const toggle = $('btn-uni-detail');
-  const hasIndicators = (data.indicators || []).length > 0;
-  toggle.hidden = !hasIndicators;
-  if (hasIndicators && !toggle.dataset.wired) {
+  toggle.hidden = !hasScores;
+  toggle.textContent = showScores ? '▲ Hide Score Details' : '▼ Show Score Details';
+  toggle.classList.toggle('on', showScores);
+  if (!toggle.dataset.wired) {
     toggle.dataset.wired = '1';
-    toggle.addEventListener('click', () => { uniShowDetails = !uniShowDetails; render(); });
+    toggle.addEventListener('click', () => { showScores = !showScores; render(); });
   }
-  if (!hasIndicators) uniShowDetails = false;
 
   $('uni-note').innerHTML = s.source === 'qs'
     ? '<strong>Data source:</strong> QS World University Rankings (2024–2027 editions). Only mainland China institutions are shown. © QS Quacquarelli Symonds. For reference only.'
@@ -480,19 +483,19 @@ async function renderUniversity() {
 
 function renderUniQS(data, panel) {
   const cols = QS_UNI_COLS.filter(([k]) => (data.indicators || []).includes(k));
-  const toggle = $('btn-uni-detail');
-  toggle.textContent = uniShowDetails ? '▲ Hide Score Details' : '▼ Show Score Details';
-  toggle.classList.toggle('on', uniShowDetails);
-
-  const heads = uniShowDetails ? cols.map(([, l]) => `<th class="score-detail">${l}</th>`).join('') : '';
+  // Scores (indicator columns + Overall) appear only when toggled on.
+  const heads = showScores
+    ? cols.map(([, l]) => `<th class="score-detail">${l}</th>`).join('') + '<th class="score-detail">Overall</th>'
+    : '';
   const body = data.list.map(r => {
-    const cells = uniShowDetails ? cols.map(([k]) =>
-      `<td class="score-detail">${fmt(r[k])}${scoreBar(r[k], 100)}</td>`).join('') : '';
+    const cells = showScores
+      ? cols.map(([k]) => `<td class="score-detail">${fmt(r[k])}${scoreBar(r[k], 100)}</td>`).join('') +
+        `<td class="score">${fmt(r.overall)}${scoreBar(r.overall, 100)}</td>`
+      : '';
     return `<tr>
       <td class="rank uni-rankcol">#${String(r.rank || '—').replace('=', '')}${rankDelta(r.rank, r.prev_rank)}</td>
       <td class="inst">${r.name}</td>
       ${cells}
-      <td class="score">${fmt(r.overall)}${scoreBar(r.overall, 100)}</td>
     </tr>`;
   }).join('');
 
@@ -501,19 +504,20 @@ function renderUniQS(data, panel) {
     <h2>China (Mainland)</h2>
     <p class="count">${data.count} mainland China institutions · QS ${data.year}</p>
     <div class="table-scroll"><table>
-      <thead><tr><th class="center">Rank ${data.year}</th><th>Institution</th>${heads}
-        <th class="score-detail">Overall</th></tr></thead>
+      <thead><tr><th class="center">Rank ${data.year}</th><th>Institution</th>${heads}</tr></thead>
       <tbody>${body}</tbody>
     </table></div>`;
 }
 
 function renderUniUSNews(data, panel) {
+  // Global Score appears only when toggled on; Enrollment is metadata (always shown).
+  const scoreHead = showScores ? '<th class="right">Global Score</th>' : '';
   const body = data.list.map(r => `
     <tr>
       <td class="rank uni-rankcol">#${r.rank}</td>
       <td class="inst">${r.name}${r.city ? `<small>${r.city}</small>` : ''}</td>
-      <td class="score">${fmt(r.overall)}${scoreBar(r.overall, 100)}</td>
       <td class="num">${fmtInt(r.enrollment)}</td>
+      ${showScores ? `<td class="score">${fmt(r.overall)}${scoreBar(r.overall, 100)}</td>` : ''}
     </tr>`).join('');
   panel.innerHTML = `
     <div class="loc">◆ U.S. News ${data.edition || data.year} · Best Global Universities</div>
@@ -521,7 +525,7 @@ function renderUniUSNews(data, panel) {
     <p class="count">${data.count} mainland China institutions · U.S. News ${data.edition || data.year}</p>
     <div class="table-scroll"><table>
       <thead><tr><th class="center">Global Rank</th><th>Institution</th>
-        <th class="right">Global Score</th><th class="right">Enrollment</th></tr></thead>
+        <th class="right">Enrollment</th>${scoreHead}</tr></thead>
       <tbody>${body}</tbody>
     </table></div>`;
 }
@@ -545,6 +549,21 @@ async function renderSubject() {
   if (s.source === 'cde')    renderCdeNav(data);
   else if (s.source === 'qs') renderQsNav(data);
   else                        renderUsNav(data);
+}
+
+// Shared "Show Score Details" control for subject detail tables (QS faculty/subject, US News).
+function scoreToggleBtn() {
+  return `<button class="btn-detail-toggle${showScores ? ' on' : ''}" id="btn-score-detail">` +
+         `${showScores ? '▲ Hide Score Details' : '▼ Show Score Details'}</button>`;
+}
+function wireSubjectToggle() {
+  const t = $('btn-score-detail');
+  if (!t) return;
+  t.addEventListener('click', () => {
+    showScores = !showScores;
+    document.body.classList.toggle('qs-details', showScores && SEL.subject.source === 'qs');
+    if (_subjectRerender) _subjectRerender();
+  });
 }
 
 // ── CDE (China Discipline Evaluation) ──
@@ -577,6 +596,7 @@ function selectCdeBroad(CDE, broad, btn) {
   $('detail').innerHTML = '<p class="placeholder">Select a discipline to view results.</p>';
 }
 function selectCdeSubject(s, btn) {
+  _subjectRerender = null;   // CDE has no scores, hence no toggle
   [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
   const rows = [...(s.list || [])].sort((a, b) => {
     const d = gradeRank(a.evaluation_result) - gradeRank(b.evaluation_result);
@@ -630,68 +650,74 @@ function selectQsFaculty(fcode, fdata, btn) {
   selectQsFacultyOverview(fdata, overview);
 }
 function selectQsFacultyOverview(fdata, btn) {
-  qsShowDetails = false; document.body.classList.remove('qs-details');
   [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  _subjectRerender = () => renderQsFacultyOverview(fdata);
+  renderQsFacultyOverview(fdata);
+}
+function renderQsFacultyOverview(fdata) {
+  document.body.classList.toggle('qs-details', showScores && SEL.subject.source === 'qs');
   const list = fdata.faculty_list || [];
+  const scoreHead = showScores ? '<th class="right">Score</th>' : '';
   const body = list.map(r => `
     <tr><td class="rank">#${r.rank_2026}${rankDelta(r.rank_2026, r.rank_2025)}</td>
       <td class="inst">${r.institution}</td>
-      <td class="score">${fmt(r.overall_score)}${scoreBar(r.overall_score, 100)}</td></tr>`).join('');
+      ${showScores ? `<td class="score">${fmt(r.overall_score)}${scoreBar(r.overall_score, 100)}</td>` : ''}</tr>`).join('');
   $('detail').innerHTML = `
     <div class="loc">◆ ${fdata.name_en} · Faculty Overview</div>
     <h2>${fdata.name_en}</h2>
-    <p class="count">${list.length} mainland China institutions · QS 2026</p>
+    <div class="detail-toolbar" style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <p class="count" style="margin:0">${list.length} mainland China institutions · QS 2026</p>
+      ${scoreToggleBtn()}
+    </div>
     <div class="faculty-note">Faculty-level aggregate ranking</div>
-    <table><thead><tr><th class="center">Rank 2026</th><th>Institution</th><th class="right">Score</th></tr></thead>
+    <table><thead><tr><th class="center">Rank 2026</th><th>Institution</th>${scoreHead}</tr></thead>
       <tbody>${body}</tbody></table>`;
+  wireSubjectToggle();
 }
 const QS_SUBJ_COLS = { academic: ['Academic','academic_score'], employer: ['Employer','employer_score'],
   citations: ['Citations','citations_score'], h_index: ['H-Index','h_index_score'], irn: ['IRN','irn_score'] };
-let _qsState = null;
 function activeQsCols(w) { const all = Object.keys(QS_SUBJ_COLS); return w ? all.filter(k => (w[k]||0) > 0) : all; }
-function wireQsToggle() {
-  const t = $('btn-qs-detail');
-  if (!t) return;
-  t.addEventListener('click', () => {
-    qsShowDetails = !qsShowDetails;
-    document.body.classList.toggle('qs-details', qsShowDetails);
-    $('detail').innerHTML = renderQsSubjectTable(_qsState.facultyName, _qsState.s);
-    wireQsToggle();
-  });
-}
 function selectQsSubject(facultyName, s, btn) {
   [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
-  _qsState = { facultyName, s };
+  _subjectRerender = () => renderQsSubjectDetail(facultyName, s);
+  renderQsSubjectDetail(facultyName, s);
+}
+function renderQsSubjectDetail(facultyName, s) {
+  document.body.classList.toggle('qs-details', showScores && SEL.subject.source === 'qs');
   $('detail').innerHTML = renderQsSubjectTable(facultyName, s);
-  wireQsToggle();
+  wireSubjectToggle();
 }
 function renderQsSubjectTable(facultyName, s) {
-  document.body.classList.toggle('qs-details', qsShowDetails);
   const list = s.list || [], w = s.weights || {}, cols = activeQsCols(w);
-  const heads = qsShowDetails ? cols.map(k => `<th class="score-detail">${QS_SUBJ_COLS[k][0]}</th>`).join('') : '';
+  // Indicator columns + Score appear only when scores are toggled on.
+  const heads = showScores
+    ? cols.map(k => `<th class="score-detail">${QS_SUBJ_COLS[k][0]}</th>`).join('') + '<th class="score-detail">Score</th>'
+    : '';
   let anyEst = false;
   const body = list.map(r => {
-    const cells = qsShowDetails ? cols.map(k => {
-      const v = r[QS_SUBJ_COLS[k][1]]; return `<td class="score-detail">${fmt(v)}${scoreBar(v, 100)}</td>`; }).join('') : '';
     const val = r.overall_score, est = r.estimated === true;
-    if (est && val != null) anyEst = true;
-    const txt = val == null ? '—' : (est ? '≈' + val.toFixed(1) : val.toFixed(1));
+    if (showScores && est && val != null) anyEst = true;
+    let cells = '';
+    if (showScores) {
+      cells = cols.map(k => {
+        const v = r[QS_SUBJ_COLS[k][1]]; return `<td class="score-detail">${fmt(v)}${scoreBar(v, 100)}</td>`;
+      }).join('');
+      const txt = val == null ? '—' : (est ? '≈' + val.toFixed(1) : val.toFixed(1));
+      cells += `<td class="score${est ? ' est' : ''}">${txt}${scoreBar(val, 100)}</td>`;
+    }
     return `<tr><td class="rank">#${r.rank_2026}${rankDelta(r.rank_2026, r.rank_2025)}</td>
-      <td class="inst">${r.institution}</td>${cells}
-      <td class="score${est ? ' est' : ''}">${txt}${scoreBar(val, 100)}</td></tr>`;
+      <td class="inst">${r.institution}</td>${cells}</tr>`;
   }).join('');
-  const toggleLabel = qsShowDetails ? '▲ Hide Score Details' : '▼ Show Score Details';
   return `
     <div class="loc">◆ ${s.qs_code} · ${facultyName}</div>
     <h2>${s.name_en}</h2>
     <div class="detail-toolbar" style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <p class="count" style="margin:0">${list.length} mainland China institutions · QS 2026</p>
-      <button class="btn-detail-toggle${qsShowDetails ? ' on' : ''}" id="btn-qs-detail">${toggleLabel}</button>
+      ${scoreToggleBtn()}
     </div>
     ${anyEst ? '<p class="est-note">≈ Estimated — overall score computed from the published indicator weights (QS publishes an official overall score only for top-ranked institutions).</p>' : ''}
     <div class="table-scroll"><table>
-      <thead><tr><th class="center">Rank 2026</th><th>Institution</th>${heads}
-        <th class="score-detail">Score</th></tr></thead>
+      <thead><tr><th class="center">Rank 2026</th><th>Institution</th>${heads}</tr></thead>
       <tbody>${body}</tbody></table></div>`;
 }
 
@@ -723,19 +749,29 @@ function selectUsCat(cat, btn) {
 }
 function selectUsSubject(catName, s, btn) {
   [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  _subjectRerender = () => renderUsSubjectDetail(catName, s);
+  renderUsSubjectDetail(catName, s);
+}
+function renderUsSubjectDetail(catName, s) {
+  document.body.classList.remove('qs-details');   // single score column — no widening
+  const scoreHead = showScores ? '<th class="right">Subject Score</th>' : '';
   const body = (s.list || []).map(r => `
     <tr><td class="rank">#${r.subject_rank}${r.rank_tied ? '<span class="delta same" title="tied">=</span>' : ''}</td>
       <td class="inst">${r.institution}${r.city ? `<small>${r.city}</small>` : ''}</td>
-      <td class="score">${fmt(r.subject_score)}${scoreBar(r.subject_score, 100)}</td>
-      <td class="num">${r.global_rank ? '#' + r.global_rank : '—'}</td></tr>`).join('');
+      <td class="num">${r.global_rank ? '#' + r.global_rank : '—'}</td>
+      ${showScores ? `<td class="score">${fmt(r.subject_score)}${scoreBar(r.subject_score, 100)}</td>` : ''}</tr>`).join('');
   $('detail').innerHTML = `
     <div class="loc">◆ ${catName} · U.S. News 2026–2027</div>
     <h2>${s.name_en}</h2>
-    <p class="count">${(s.list||[]).length} mainland China institutions · U.S. News subject ranking</p>
+    <div class="detail-toolbar" style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <p class="count" style="margin:0">${(s.list||[]).length} mainland China institutions · U.S. News subject ranking</p>
+      ${scoreToggleBtn()}
+    </div>
     <div class="table-scroll"><table>
       <thead><tr><th class="center">Subject Rank</th><th>Institution</th>
-        <th class="right">Subject Score</th><th class="right">Global Rank</th></tr></thead>
+        <th class="right">Global Rank</th>${scoreHead}</tr></thead>
       <tbody>${body}</tbody></table></div>`;
+  wireSubjectToggle();
 }
 </script>
 </body>
