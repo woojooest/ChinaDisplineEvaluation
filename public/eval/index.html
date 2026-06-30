@@ -65,8 +65,17 @@
   .wrap {
     max-width: 1180px; margin: 18px auto 60px; padding: 0 32px;
     display: grid; grid-template-columns: 220px 300px 1fr; gap: 24px; align-items: start;
+    transition: max-width .25s ease, grid-template-columns .25s ease;
   }
-  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  /* When Score Details is open, widen the page and trim the side columns so the
+     detail table fits without horizontal scrolling. */
+  body.qs-details .wrap {
+    max-width: min(1640px, calc(100vw - 48px));
+    grid-template-columns: 190px 240px 1fr;
+  }
+  @media (max-width: 900px) {
+    .wrap, body.qs-details .wrap { grid-template-columns: 1fr; }
+  }
 
   .panel {
     background: var(--card); border: 1px solid var(--line); border-radius: 14px;
@@ -281,6 +290,7 @@ Promise.all([
 // ── Source switcher ──
 function setSource(src, btn) {
   SOURCE = src;
+  document.body.classList.remove('qs-details');
   document.querySelectorAll('.switcher button').forEach(b => b.classList.toggle('active', b === btn));
   document.body.classList.toggle('qs-mode', src === 'qs');
   updateIntro();
@@ -453,6 +463,7 @@ function computeOverall(r, weights) {
 }
 
 function selectQsFacultyOverview(fdata, btn) {
+  document.body.classList.remove('qs-details');
   [...$subjects.children].forEach(c => c.setAttribute('aria-selected', c === btn));
   const list = fdata.faculty_list || [];
 
@@ -521,6 +532,8 @@ function activeDetailCols(weights) {
 }
 
 function renderQsSubjectTable(facultyName, s) {
+  // Widen the page only while the detail columns are showing
+  document.body.classList.toggle('qs-details', showDetails);
   const list = s.list || [];
   const w = s.weights || {};
   const cols = activeDetailCols(w);
