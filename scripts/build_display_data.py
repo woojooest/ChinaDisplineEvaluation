@@ -16,8 +16,10 @@ Output tree (under public/eval/data/):
 
 Inputs:
   data/sources/qs_university.json     -> QS university per-year + indicators
+  data/sources/the_university.json    -> THE university per-year, China mainland only
   data/sources/cde_subject_eval.json  -> CDE (China Discipline Evaluation) 4th round
   data/sources/qs_subject.json        -> QS subject rankings by faculty
+  data/sources/the_subject.json       -> THE subject rankings by broad subject area
   raw_data/usnews/...                 -> U.S. News global + subject (original, gitignored)
 """
 import json, os, re
@@ -103,7 +105,26 @@ def build_university_usnews():
     return [year]
 
 # ────────────────────────────────────────────────────────────
-# 3. SUBJECT · MoE & QS  (copy existing static files into place)
+# 3. UNIVERSITY · THE  (World University Rankings)
+# ────────────────────────────────────────────────────────────
+def build_university_the():
+    print("University · THE")
+    src = os.path.join(SOURCES, "the_university.json")
+    data = json.load(open(src, encoding="utf-8"))
+    years = sorted(data.keys(), reverse=True)
+    for y in years:
+        yd = data[y]
+        w(f"university/the/{y}.json", {
+            "year": y, "source": "the",
+            "count": yd["count"],
+            "indicators": yd["indicators"],
+            "list": yd["list"],
+        })
+    w("university/the/index.json", {"source": "the", "years": years, "default": years[0]})
+    return years
+
+# ────────────────────────────────────────────────────────────
+# 4. SUBJECT · MoE & QS  (copy existing static files into place)
 # ────────────────────────────────────────────────────────────
 def build_subject_cde():
     print("Subject · CDE")
@@ -116,7 +137,22 @@ def build_subject_qs():
     w("subject/qs/index.json", qs)
 
 # ────────────────────────────────────────────────────────────
-# 4. SUBJECT · US News  (51 subjects -> grouped into categories)
+# 5. SUBJECT · THE  (11 broad subject areas)
+# ────────────────────────────────────────────────────────────
+def build_subject_the():
+    print("Subject · THE")
+    data = json.load(open(os.path.join(SOURCES, "the_subject.json"), encoding="utf-8"))
+    years = sorted(data.keys(), reverse=True)
+    for y in years:
+        yd = data[y]
+        if "THE" in yd.get("categories", {}):
+            yd["categories"]["THE"]["name_en"] = "Times Higher Education"
+        w(f"subject/the/{y}.json", yd)
+    w("subject/the/index.json", {"source": "the", "years": years, "default": years[0]})
+    return years
+
+# ────────────────────────────────────────────────────────────
+# 6. SUBJECT · US News  (51 subjects -> grouped into categories)
 # ────────────────────────────────────────────────────────────
 USNEWS_CATEGORIES = [
     ("ENG", "Engineering & Materials", [
@@ -204,8 +240,10 @@ def build_subject_usnews():
 def main():
     uni_qs_years = build_university_qs()
     uni_us_years = build_university_usnews()
+    uni_the_years = build_university_the()
     build_subject_cde()
     build_subject_qs()
+    subj_the_years = build_subject_the()
     build_subject_usnews()
 
     manifest = {
@@ -216,6 +254,7 @@ def main():
                 "sources": {
                     "qs":     {"label": "QS",      "endpoint": "./data/university/qs",     "years": uni_qs_years, "default_year": uni_qs_years[0]},
                     "usnews": {"label": "US News", "endpoint": "./data/university/usnews", "years": uni_us_years, "default_year": uni_us_years[0]},
+                    "the":    {"label": "THE",     "endpoint": "./data/university/the",    "years": uni_the_years, "default_year": uni_the_years[0]},
                 },
             },
             "subject": {
@@ -225,6 +264,7 @@ def main():
                     "cde":    {"label": "CDE", "endpoint": "./data/subject/cde/index.json", "years": ["2016"], "default_year": "2016"},
                     "qs":     {"label": "QS",             "endpoint": "./data/subject/qs/index.json",     "years": ["2026"], "default_year": "2026"},
                     "usnews": {"label": "US News",        "endpoint": "./data/subject/usnews/index.json", "years": ["2026"], "default_year": "2026"},
+                    "the":    {"label": "THE",            "endpoint": "./data/subject/the", "years": subj_the_years, "default_year": subj_the_years[0]},
                 },
             },
         }

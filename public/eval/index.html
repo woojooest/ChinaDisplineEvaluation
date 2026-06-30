@@ -8,7 +8,7 @@
   :root {
     --bg: #faf8f3; --card: #fff; --ink: #1a1a1a; --muted: #6b6b6b;
     --line: #ece8df; --crimson: #c0142c; --gold: #b8860b; --blue: #1d4ed8;
-    --qs-accent: #005eb8; --usnews-accent: #0f766e; --cde-accent: #c0142c;
+    --qs-accent: #005eb8; --usnews-accent: #0f766e; --cde-accent: #c0142c; --the-accent: #7c2d12;
     --accent: var(--qs-accent);
     --serif: Georgia, "Times New Roman", "Songti SC", serif;
     --sans: -apple-system, "Segoe UI", "PingFang SC", Roboto, Helvetica, Arial, sans-serif;
@@ -21,6 +21,7 @@
   body.src-qs     { --accent: var(--qs-accent); }
   body.src-usnews { --accent: var(--usnews-accent); }
   body.src-cde    { --accent: var(--cde-accent); }
+  body.src-the    { --accent: var(--the-accent); }
 
   /* ── Header ── */
   header {
@@ -262,10 +263,12 @@ const SEL = {                                  // current source/year per board
 const CACHE = {};                              // url -> parsed JSON
 let showScores = false;          // global: "Show Score Details" toggle (shared across boards/sources)
 let _subjectRerender = null;     // re-renders the current subject detail when scores toggle
+let subjectRenderToken = 0;      // prevents stale async subject renders from appending duplicate nav items
 
 // Each distinct dataset has its OWN url endpoint.
 function datasetUrl(board, source, year) {
   if (board === 'university') return `./data/university/${source}/${year}.json`;
+  if (source === 'the') return `./data/subject/the/${year}.json`;
   return `./data/subject/${source}/index.json`;             // subject sources are single-file
 }
 
@@ -366,9 +369,9 @@ function buildYearSeg(elId, board) {
 function render() {
   const src = SEL[BOARD].source;
   document.body.className = 'src-' + src;
-  // Widen the page only when many indicator columns are revealed (QS sources).
-  document.body.classList.toggle('uni-details', BOARD === 'university' && showScores && src === 'qs');
-  document.body.classList.toggle('qs-details',  BOARD === 'subject' && showScores && src === 'qs');
+  // Widen the page only when many indicator columns are revealed.
+  document.body.classList.toggle('uni-details', BOARD === 'university' && showScores && ['qs', 'the'].includes(src));
+  document.body.classList.toggle('qs-details',  BOARD === 'subject' && showScores && ['qs', 'the'].includes(src));
 
   // active board tab
   $('board-tabs').querySelectorAll('button')
@@ -398,10 +401,14 @@ function updateIntro() {
       E('eyebrow', `QS World University Rankings · ${y}`);
       E('main-title', 'University Rankings — China (Mainland)');
       E('main-desc', 'QS World University Rankings for mainland China institutions. Pick a year to see the overall standings; toggle Score Details for the underlying indicator scores.');
-    } else {
+    } else if (src === 'usnews') {
       E('eyebrow', `U.S. News Best Global Universities · 2026–2027`);
       E('main-title', 'University Rankings — China (Mainland)');
       E('main-desc', 'U.S. News & World Report Best Global Universities for mainland China institutions, by overall Global Score.');
+    } else {
+      E('eyebrow', `Times Higher Education World University Rankings · ${y}`);
+      E('main-title', 'University Rankings — China (Mainland)');
+      E('main-desc', 'Times Higher Education World University Rankings for mainland China institutions. Toggle Score Details for THE pillar scores.');
     }
   } else {
     if (src === 'cde') {
@@ -414,11 +421,16 @@ function updateIntro() {
       E('main-title', 'QS Subject Rankings — China (Mainland)');
       E('main-desc', 'Choose a faculty area, then a subject, to see mainland China institutions in the 2026 QS World University Rankings by Subject.');
       E('col1-label', 'Faculty'); E('col2-label', 'Subject');
-    } else {
+    } else if (src === 'usnews') {
       E('eyebrow', 'U.S. News Best Global Universities by Subject · 2026–2027');
       E('main-title', 'U.S. News Subject Rankings — China (Mainland)');
       E('main-desc', 'Choose a subject area, then a subject, to see mainland China institutions in the U.S. News subject rankings, by subject score.');
       E('col1-label', 'Area'); E('col2-label', 'Subject');
+    } else {
+      E('eyebrow', `Times Higher Education World University Rankings by Subject · ${y}`);
+      E('main-title', 'THE Subject Rankings — China (Mainland)');
+      E('main-desc', 'Choose one of THE’s 11 broad subject areas to see mainland China institutions in that subject ranking. THE does not publish finer sub-subject rankings in this dataset.');
+      E('col1-label', 'Source'); E('col2-label', 'Subject Area');
     }
   }
 }
@@ -473,12 +485,15 @@ async function renderUniversity() {
     toggle.addEventListener('click', () => { showScores = !showScores; render(); });
   }
 
-  $('uni-note').innerHTML = s.source === 'qs'
-    ? '<strong>Data source:</strong> QS World University Rankings (2024–2027 editions). Only mainland China institutions are shown. © QS Quacquarelli Symonds. For reference only.'
-    : '<strong>Data source:</strong> U.S. News & World Report — Best Global Universities, 2026–2027 edition. Only mainland China institutions are shown. For reference only.';
+  $('uni-note').innerHTML = ({
+    qs: '<strong>Data source:</strong> QS World University Rankings (2024–2027 editions). Only mainland China institutions are shown. © QS Quacquarelli Symonds. For reference only.',
+    usnews: '<strong>Data source:</strong> U.S. News & World Report — Best Global Universities, 2026–2027 edition. Only mainland China institutions are shown. For reference only.',
+    the: '<strong>Data source:</strong> Times Higher Education World University Rankings (2024–2026 editions). Only mainland China institutions are shown. For reference only.',
+  })[s.source];
 
   if (s.source === 'qs') renderUniQS(data, panel);
-  else                   renderUniUSNews(data, panel);
+  else if (s.source === 'usnews') renderUniUSNews(data, panel);
+  else                   renderUniTHE(data, panel);
 }
 
 function renderUniQS(data, panel) {
@@ -530,8 +545,46 @@ function renderUniUSNews(data, panel) {
     </table></div>`;
 }
 
+const THE_COLS = [
+  ['teaching', 'Teaching'], ['research', 'Research'], ['citations', 'Citations'],
+  ['industry_income', 'Industry'], ['international_outlook', 'International'],
+];
+
+function renderUniTHE(data, panel) {
+  const cols = THE_COLS.filter(([k]) => (data.indicators || []).includes(k));
+  const heads = showScores
+    ? cols.map(([, l]) => `<th class="score-detail">${l}</th>`).join('') + '<th class="score-detail">Overall</th>'
+    : '';
+  const body = data.list.map(r => {
+    const cells = showScores
+      ? cols.map(([k]) => `<td class="score-detail">${fmt(r[k])}${scoreBar(r[k], 100)}</td>`).join('') +
+        `<td class="score">${fmt(r.overall)}${scoreBar(r.overall, 100)}</td>`
+      : '';
+    const meta = [
+      r.students != null ? `${fmtInt(r.students)} students` : '',
+      r.student_staff_ratio != null ? `${fmt(r.student_staff_ratio)} student/staff` : '',
+      r.intl_students_pct != null ? `${fmt(r.intl_students_pct, 0)}% international` : '',
+    ].filter(Boolean).join(' · ');
+    return `<tr>
+      <td class="rank uni-rankcol">#${r.rank || '—'}</td>
+      <td class="inst">${r.name}${meta ? `<small>${meta}</small>` : ''}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="loc">◆ THE ${data.year} · World University Rankings</div>
+    <h2>China (Mainland)</h2>
+    <p class="count">${data.count} mainland China institutions · Times Higher Education ${data.year}</p>
+    <div class="table-scroll"><table>
+      <thead><tr><th class="center">Rank ${data.year}</th><th>Institution</th>${heads}</tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>`;
+}
+
 // ═══════════════════════ SUBJECT board ═══════════════════════
 async function renderSubject() {
+  const token = ++subjectRenderToken;
   const s = SEL.subject;
   showEndpoint('subj-endpoint');
   $('nav').innerHTML = ''; $('subjects').innerHTML = '';
@@ -539,16 +592,20 @@ async function renderSubject() {
   let data;
   try { data = await loadJSON(datasetUrl('subject', s.source, s.year)); }
   catch (e) { $('detail').innerHTML = `<p class="placeholder">Failed to load: ${e.message}</p>`; return; }
+  if (token !== subjectRenderToken) return;
+  $('nav').innerHTML = ''; $('subjects').innerHTML = '';
 
   $('subj-note').innerHTML = ({
     cde: '<strong>Data source:</strong> China Discipline Evaluation (CDE) — Fourth Round (2016), conducted by the China Academic Degrees and Graduate Education Development Center (CDGDC). For reference only.',
     qs:  '<strong>Data source:</strong> QS World University Rankings by Subject 2026. Only mainland China institutions are shown. © QS Quacquarelli Symonds. For reference only.',
     usnews: '<strong>Data source:</strong> U.S. News Best Global Universities subject rankings, 2026–2027. Only mainland China institutions are shown. For reference only.',
+    the: '<strong>Data source:</strong> Times Higher Education World University Rankings by Subject (2024–2026 editions). Only mainland China institutions are shown. THE publishes 11 broad subject areas, not finer sub-subject rankings. For reference only.',
   })[s.source];
 
   if (s.source === 'cde')    renderCdeNav(data);
   else if (s.source === 'qs') renderQsNav(data);
-  else                        renderUsNav(data);
+  else if (s.source === 'usnews') renderUsNav(data);
+  else                        renderTheNav(data);
 }
 
 // Shared "Show Score Details" control for subject detail tables (QS faculty/subject, US News).
@@ -561,7 +618,7 @@ function wireSubjectToggle() {
   if (!t) return;
   t.addEventListener('click', () => {
     showScores = !showScores;
-    document.body.classList.toggle('qs-details', showScores && SEL.subject.source === 'qs');
+    document.body.classList.toggle('qs-details', showScores && ['qs', 'the'].includes(SEL.subject.source));
     if (_subjectRerender) _subjectRerender();
   });
 }
@@ -770,6 +827,71 @@ function renderUsSubjectDetail(catName, s) {
     <div class="table-scroll"><table>
       <thead><tr><th class="center">Subject Rank</th><th>Institution</th>
         <th class="right">Global Rank</th>${scoreHead}</tr></thead>
+      <tbody>${body}</tbody></table></div>`;
+  wireSubjectToggle();
+}
+
+// ── THE subject ──
+function renderTheNav(D) {
+  const cats = D.categories;
+  const $nav = $('nav');
+  Object.entries(cats).forEach(([code, cat], i) => {
+    const b = document.createElement('button');
+    const n = Object.keys(cat.subjects || {}).length;
+    b.innerHTML = `${cat.name_en}<span class="subj-count">(${n})</span>`;
+    b.onclick = () => selectTheCat(cat, b);
+    $nav.appendChild(b);
+    if (i === 0) selectTheCat(cat, b);
+  });
+}
+function selectTheCat(cat, btn) {
+  [...$('nav').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  const $subjects = $('subjects'); $subjects.innerHTML = '';
+  Object.values(cat.subjects || {}).sort((a, b) => a.name_en.localeCompare(b.name_en)).forEach(s => {
+    const b = document.createElement('button');
+    b.innerHTML = `${s.name_en}<span class="cnt">(${s.list.length})</span>`;
+    b.onclick = () => selectTheSubject(cat.name_en, s, b);
+    $subjects.appendChild(b);
+  });
+  const first = $subjects.querySelector('button');
+  if (first) first.click();
+  else $('detail').innerHTML = '<p class="placeholder">No THE subject rankings available for this year.</p>';
+}
+function selectTheSubject(catName, s, btn) {
+  [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  _subjectRerender = () => renderTheSubjectDetail(catName, s);
+  renderTheSubjectDetail(catName, s);
+}
+function renderTheSubjectDetail(catName, s) {
+  document.body.classList.toggle('qs-details', showScores && SEL.subject.source === 'the');
+  const scoreHead = showScores
+    ? THE_COLS.map(([, l]) => `<th class="score-detail">${l}</th>`).join('') + '<th class="score-detail">Overall</th>'
+    : '';
+  const body = (s.list || []).map(r => {
+    const cells = showScores
+      ? THE_COLS.map(([k]) => `<td class="score-detail">${fmt(r[k])}${scoreBar(r[k], 100)}</td>`).join('') +
+        `<td class="score">${fmt(r.overall)}${scoreBar(r.overall, 100)}</td>`
+      : '';
+    const meta = [
+      r.students != null ? `${fmtInt(r.students)} students` : '',
+      r.student_staff_ratio != null ? `${fmt(r.student_staff_ratio)} student/staff` : '',
+      r.intl_students_pct != null ? `${fmt(r.intl_students_pct, 0)}% international` : '',
+    ].filter(Boolean).join(' · ');
+    return `<tr>
+      <td class="rank">#${r.rank || '—'}</td>
+      <td class="inst">${r.name}${meta ? `<small>${meta}</small>` : ''}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+  $('detail').innerHTML = `
+    <div class="loc">◆ ${catName} · THE ${SEL.subject.year}</div>
+    <h2>${s.name_en}</h2>
+    <div class="detail-toolbar" style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <p class="count" style="margin:0">${(s.list||[]).length} mainland China institutions · THE subject ranking</p>
+      ${scoreToggleBtn()}
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr><th class="center">Subject Rank</th><th>Institution</th>${scoreHead}</tr></thead>
       <tbody>${body}</tbody></table></div>`;
   wireSubjectToggle();
 }
