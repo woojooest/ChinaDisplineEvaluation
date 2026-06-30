@@ -1,0 +1,11 @@
+# Original collected raw data — large, kept local only
+raw_data/
+data/the/
+
+# Superseded / intermediate files kept locally for reference, not on GitHub
+archive/
+
+# OS & Python junk
+.DS_Store
+__pycache__/
+*.pyc

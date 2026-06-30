@@ -3,18 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Discipline Rankings — StudyChina</title>
+<title>University & Discipline Rankings — StudyChina</title>
 <style>
   :root {
     --bg: #faf8f3; --card: #fff; --ink: #1a1a1a; --muted: #6b6b6b;
     --line: #ece8df; --crimson: #c0142c; --gold: #b8860b; --blue: #1d4ed8;
-    --qs-accent: #005eb8;
+    --qs-accent: #005eb8; --usnews-accent: #0f766e; --cde-accent: #c0142c;
+    --accent: var(--qs-accent);
     --serif: Georgia, "Times New Roman", "Songti SC", serif;
     --sans: -apple-system, "Segoe UI", "PingFang SC", Roboto, Helvetica, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body { font-family: var(--sans); color: var(--ink); background: var(--bg); }
+
+  /* theme accent follows the active source */
+  body.src-qs     { --accent: var(--qs-accent); }
+  body.src-usnews { --accent: var(--usnews-accent); }
+  body.src-cde    { --accent: var(--cde-accent); }
 
   /* ── Header ── */
   header {
@@ -27,29 +33,6 @@
   .logo .dot::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; border: 1.5px solid var(--crimson); }
   .logo b { font-weight: 800; }
 
-  /* ── Source Switcher ── */
-  .switcher {
-    margin-left: auto; display: flex; background: #f3f0e9; border-radius: 10px;
-    padding: 4px; gap: 4px;
-  }
-  .switcher button {
-    border: none; background: none; cursor: pointer; font: inherit;
-    font-size: .82rem; font-weight: 700; padding: 8px 18px; border-radius: 7px;
-    color: var(--muted); letter-spacing: .03em; transition: all .18s;
-  }
-  .switcher button.active {
-    background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.1);
-  }
-  .switcher button.active[data-src="moe"] { color: var(--crimson); }
-  .switcher button.active[data-src="qs"]  { color: var(--qs-accent); }
-  .switcher .badge {
-    display: inline-block; font-size: .68rem; font-weight: 700;
-    padding: 1px 6px; border-radius: 4px; margin-left: 6px;
-    vertical-align: middle;
-  }
-  .switcher button[data-src="moe"] .badge { background: #fdf4f5; color: var(--crimson); }
-  .switcher button[data-src="qs"]  .badge { background: #e8f0fb; color: var(--qs-accent); }
-
   /* ── Primary board tabs ── */
   .board-tabs { margin-left: auto; display: flex; gap: 4px; }
   .board-tabs button {
@@ -59,51 +42,62 @@
   }
   .board-tabs button::after {
     content: ""; position: absolute; left: 0; right: 0; bottom: -15px; height: 3px;
-    background: var(--qs-accent); border-radius: 3px 3px 0 0; transform: scaleX(0); transition: transform .18s;
+    background: var(--accent); border-radius: 3px 3px 0 0; transform: scaleX(0); transition: transform .18s;
   }
   .board-tabs button.active { color: var(--ink); }
   .board-tabs button.active::after { transform: scaleX(1); }
 
-  /* ── Secondary control bar (per board) ── */
+  /* ── Intro ── */
+  .intro { max-width: 1180px; margin: 30px auto 4px; padding: 0 32px; transition: all .2s; }
+  .eyebrow {
+    display: flex; align-items: center; gap: 14px; font-weight: 700;
+    letter-spacing: .12em; font-size: .82rem; text-transform: uppercase; color: var(--ink);
+  }
+  .eyebrow::before { content: ""; width: 46px; height: 2px; background: var(--accent); }
+  .intro h1 { font-family: var(--serif); font-size: 2rem; margin: 14px 0 0; }
+  .intro p { color: var(--muted); max-width: 760px; line-height: 1.5; }
+
+  /* ── Control bar (source + year) ── */
   .ctrlbar {
-    max-width: 1180px; margin: 6px auto 0; padding: 0 32px;
+    max-width: 1180px; margin: 16px auto 0; padding: 0 32px;
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   }
-  .year-switch { display: flex; background: #f3f0e9; border-radius: 10px; padding: 4px; gap: 4px; }
-  .year-switch button {
+  .seg { display: flex; background: #f3f0e9; border-radius: 10px; padding: 4px; gap: 4px; }
+  .seg > .seg-label {
+    font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: #aaa397; align-self: center; padding: 0 8px 0 6px;
+  }
+  .seg button {
     border: none; background: none; cursor: pointer; font: inherit;
     font-size: .82rem; font-weight: 700; padding: 7px 16px; border-radius: 7px;
     color: var(--muted); transition: all .15s;
   }
-  .year-switch button.active { background: #fff; color: var(--qs-accent); box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  .seg button:disabled { cursor: default; opacity: .55; }
+  .seg button.active { background: #fff; color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  .spacer { margin-left: auto; }
+
+  .btn-detail-toggle {
+    border: 1px solid var(--line); background: #fff; cursor: pointer;
+    font: inherit; font-size: .78rem; font-weight: 600; color: var(--muted);
+    padding: 7px 14px; border-radius: 8px; transition: all .15s;
+  }
+  .btn-detail-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-detail-toggle.on { background: #eef3fc; border-color: var(--accent); color: var(--accent); }
 
   /* ── University board ── */
   #university-view { max-width: 1180px; margin: 16px auto 0; padding: 0 32px; transition: max-width .25s ease; }
   body.uni-details #university-view { max-width: min(1640px, calc(100vw - 48px)); }
-  #university-view .ctrlbar { max-width: none; padding: 0; margin: 16px 0 0; justify-content: space-between; }
+  #university-view .ctrlbar { max-width: none; padding: 0; margin: 16px 0 0; }
   #university-view .source-note { max-width: none; padding-left: 0; padding-right: 0; }
   #uni-panel { padding: 22px 26px 26px; margin-top: 16px; }
   .uni-rankcol { width: 96px; }
 
-  /* ── Intro ── */
-  .intro { max-width: 1180px; margin: 32px auto 8px; padding: 0 32px; transition: all .2s; }
-  .eyebrow {
-    display: flex; align-items: center; gap: 14px; font-weight: 700;
-    letter-spacing: .12em; font-size: .82rem; text-transform: uppercase;
-  }
-  .eyebrow::before { content: ""; width: 46px; height: 2px; background: var(--crimson); }
-  body.qs-mode .eyebrow::before { background: var(--qs-accent); }
-  .intro h1 { font-family: var(--serif); font-size: 2rem; margin: 14px 0 0; }
-  .intro p { color: var(--muted); max-width: 760px; line-height: 1.5; }
-
-  /* ── Layout ── */
+  /* ── Subject board layout ── */
   .wrap {
     max-width: 1180px; margin: 18px auto 60px; padding: 0 32px;
-    display: grid; grid-template-columns: 220px 300px 1fr; gap: 24px; align-items: start;
+    display: grid; grid-template-columns: 230px 320px 1fr; gap: 24px; align-items: start;
     transition: max-width .25s ease, grid-template-columns .25s ease;
   }
-  /* When Score Details is open, widen the page and trim the side columns so the
-     detail table fits without horizontal scrolling. */
   body.qs-details .wrap {
     max-width: min(1640px, calc(100vw - 48px));
     grid-template-columns: 190px 240px 1fr;
@@ -128,8 +122,8 @@
     color: var(--ink); border-left: 3px solid transparent;
   }
   .nav-list button:hover { background: #faf8f3; }
-  .nav-list button[aria-selected="true"] { color: var(--crimson); border-left-color: var(--crimson); background: #fdf4f5; }
-  body.qs-mode .nav-list button[aria-selected="true"] { color: var(--qs-accent); border-left-color: var(--qs-accent); background: #eef3fc; }
+  .nav-list button[aria-selected="true"] { color: var(--accent); border-left-color: var(--accent); background: #eef3fc; }
+  body.src-cde .nav-list button[aria-selected="true"] { background: #fdf4f5; }
   .nav-list .subj-count { font-size: .75rem; font-weight: 400; color: var(--muted); margin-left: 6px; }
 
   /* ── Subject list ── */
@@ -141,28 +135,28 @@
   }
   .subj-list button .code { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 8px; font-size: .8rem; }
   .subj-list button:hover { background: #faf8f3; }
-  .subj-list button[aria-selected="true"] { background: #fdf4f5; color: var(--crimson); font-weight: 600; }
-  body.qs-mode .subj-list button[aria-selected="true"] { background: #eef3fc; color: var(--qs-accent); }
+  .subj-list button[aria-selected="true"] { background: #eef3fc; color: var(--accent); font-weight: 600; }
+  body.src-cde .subj-list button[aria-selected="true"] { background: #fdf4f5; }
   .subj-list .cnt { color: var(--muted); font-size: .75rem; margin-left: 5px; }
 
   /* ── Detail panel ── */
   .detail { padding: 26px 30px 30px; }
   .detail .loc {
-    display: flex; align-items: center; gap: 7px; color: var(--crimson);
+    display: flex; align-items: center; gap: 7px; color: var(--accent);
     font-weight: 700; letter-spacing: .06em; font-size: .78rem; text-transform: uppercase;
   }
-  body.qs-mode .detail .loc { color: var(--qs-accent); }
   .detail h2 { font-family: var(--serif); font-size: 1.9rem; margin: 8px 0 2px; }
   .detail .count { color: var(--muted); margin: 6px 0 22px; font-size: .88rem; }
   .placeholder { color: var(--muted); padding: 50px 4px; text-align: center; }
 
-  /* ── MOE table ── */
+  /* ── tables ── */
   table { border-collapse: collapse; width: 100%; }
   thead th {
     text-align: left; padding: 10px 14px; font-size: .72rem; letter-spacing: .1em;
     text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--line);
   }
   thead th.center { text-align: center; }
+  thead th.right  { text-align: right; }
   tbody tr { border-bottom: 1px solid #f3f0e9; }
   td { padding: 11px 14px; vertical-align: middle; }
   td.grade { text-align: center; }
@@ -173,7 +167,9 @@
   td.rank span.same { color: var(--muted); }
   td.code-col { width: 84px; color: var(--muted); font-variant-numeric: tabular-nums; }
   td.inst { font-family: var(--serif); font-size: 1.02rem; }
+  td.inst small { display: block; font-family: var(--sans); font-size: .76rem; color: var(--muted); margin-top: 2px; }
   td.score { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .88rem; padding-right: 18px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .88rem; }
 
   .pill {
     display: inline-block; min-width: 46px; text-align: center;
@@ -184,385 +180,405 @@
   .pill.B { color: #1d4ed8; border-color: #c7d4f7; background: #f3f6ff; }
   .pill.C { color: var(--gold); border-color: #eadfc0; background: #fbf6e9; }
 
-  /* ── QS score bars ── */
-  .score-bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--qs-accent); opacity: .65; vertical-align: middle; margin-left: 6px; }
+  .score-bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--accent); opacity: .6; vertical-align: middle; margin-left: 6px; }
 
-  /* ── Faculty overview chip ── */
   .faculty-note {
-    display: inline-block; background: #eef3fc; color: var(--qs-accent);
+    display: inline-block; background: #eef3fc; color: var(--accent);
     font-size: .78rem; font-weight: 700; padding: 4px 12px; border-radius: 6px;
     margin-bottom: 18px;
   }
 
-  /* ── Detail toggle button ── */
-  .detail-toolbar {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
-  }
-  .btn-detail-toggle {
-    border: 1px solid var(--line); background: #fff; cursor: pointer;
-    font: inherit; font-size: .78rem; font-weight: 600; color: var(--muted);
-    padding: 5px 13px; border-radius: 7px; display: flex; align-items: center;
-    gap: 6px; transition: all .15s;
-  }
-  .btn-detail-toggle:hover { border-color: var(--qs-accent); color: var(--qs-accent); }
-  .btn-detail-toggle.on { background: #eef3fc; border-color: var(--qs-accent); color: var(--qs-accent); }
-  .btn-detail-toggle svg { flex-shrink: 0; }
-
-  /* ── Score tooltip ── */
-  .th-score-wrap { display: inline-flex; align-items: center; gap: 5px; position: relative; }
-  .info-btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 16px; height: 16px; border-radius: 50%; padding: 0;
-    background: #e8f0fb; color: var(--qs-accent);
-    font-family: Georgia, "Times New Roman", serif; font-style: italic;
-    font-size: .74rem; font-weight: 700; cursor: pointer; flex-shrink: 0;
-    border: 1px solid #cfe0f6; line-height: 1; transition: all .15s;
-  }
-  .info-btn::before { content: "i"; }
-  .info-btn:hover, .info-btn:focus-visible,
-  .info-btn.open { background: var(--qs-accent); color: #fff; border-color: var(--qs-accent); outline: none; }
-
-  /* Score-methodology popover — appended to <body> so it never gets clipped */
-  #qs-tip {
-    position: absolute; z-index: 9999; display: none;
-    background: #1a1a1a; color: #fff; font-size: .78rem; line-height: 1.6;
-    padding: 13px 16px; border-radius: 10px; min-width: 230px; max-width: 300px;
-    box-shadow: 0 8px 28px rgba(0,0,0,.28);
-  }
-  #qs-tip.visible { display: block; }
-  #qs-tip .tip-title { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase;
-    opacity: .55; margin-bottom: 8px; }
-  #qs-tip .tip-lead { margin: 0 0 10px; opacity: .85; }
-  #qs-tip .w-row { display: flex; justify-content: space-between; gap: 24px; padding: 2px 0; }
-  #qs-tip .w-row span { opacity: .7; }
-  #qs-tip .w-row b   { font-variant-numeric: tabular-nums; }
-  #qs-tip .tip-arrow { position: absolute; top: -6px; width: 12px; height: 12px;
-    background: #1a1a1a; transform: rotate(45deg); border-radius: 2px; }
-
-  /* ── Detail score columns (rendered just like the Score column) ── */
   .table-scroll { overflow-x: auto; }
-  th.score-detail {
-    text-align: right; padding: 10px 14px; white-space: nowrap;
-    font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
-  }
-  td.score-detail {
-    text-align: right; vertical-align: middle; padding: 11px 14px;
-    font-variant-numeric: tabular-nums; color: var(--muted); font-size: .88rem; white-space: nowrap;
-  }
+  th.score-detail { text-align: right; padding: 10px 14px; white-space: nowrap;
+    font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
+  td.score-detail { text-align: right; vertical-align: middle; padding: 11px 14px;
+    font-variant-numeric: tabular-nums; color: var(--muted); font-size: .88rem; white-space: nowrap; }
   td.score-detail .score-bar { background: #b9c6dd; }
   td.score.est { color: #9aa3b2; font-style: italic; }
   td.score.est .score-bar { opacity: .4; background-image: repeating-linear-gradient(90deg, #b9c6dd 0 3px, transparent 3px 5px); }
   .est-note { margin: -6px 0 16px; font-size: .76rem; color: var(--muted); line-height: 1.5; }
 
-  /* ── Source note ── */
+  .endpoint-tag {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem;
+    color: #9b9488; background: #f3f0e9; padding: 3px 9px; border-radius: 6px;
+  }
+
   .source-note {
-    max-width: 1180px; margin: 0 auto 60px; padding: 18px 32px 0;
-    color: var(--muted); font-size: .82rem; line-height: 1.55;
-    border-top: 1px solid var(--line);
+    max-width: 1180px; margin: 26px auto 60px; padding: 18px 32px 0;
+    color: var(--muted); font-size: .82rem; line-height: 1.55; border-top: 1px solid var(--line);
   }
   .source-note strong { color: #444; font-weight: 600; }
-  .source-note span { display: none; }
-  .source-note span.active { display: inline; }
 </style>
 </head>
-<body>
+<body class="src-qs">
 <header>
   <div class="logo"><span class="dot"></span><span><b>Study</b>China<span style="color:var(--crimson)">.</span></span></div>
-  <div class="board-tabs">
-    <button class="active" data-board="university" onclick="setBoard('university', this)">University Rankings</button>
-    <button data-board="subject" onclick="setBoard('subject', this)">Subject Rankings</button>
-  </div>
+  <div class="board-tabs" id="board-tabs"></div>
 </header>
 
 <div class="intro">
-  <div class="eyebrow" id="eyebrow">QS World University Rankings</div>
-  <h1 id="main-title">University Rankings — China (Mainland)</h1>
-  <p id="main-desc">QS World University Rankings for mainland China institutions. Pick a year to see the overall standings.</p>
+  <div class="eyebrow" id="eyebrow">—</div>
+  <h1 id="main-title">Rankings</h1>
+  <p id="main-desc"></p>
 </div>
 
 <!-- ════════════ UNIVERSITY BOARD ════════════ -->
-<div id="university-view">
+<div id="university-view" hidden>
   <div class="ctrlbar">
-    <div class="year-switch" id="uni-years"></div>
-    <button class="btn-detail-toggle" id="btn-uni-detail">▼ Show Score Details</button>
+    <div class="seg" id="uni-source"></div>
+    <div class="seg" id="uni-year"></div>
+    <div class="spacer"></div>
+    <span class="endpoint-tag" id="uni-endpoint"></span>
+    <button class="btn-detail-toggle" id="btn-uni-detail" hidden>▼ Show Score Details</button>
   </div>
-  <div class="panel detail" id="uni-panel"><p class="placeholder">Loading data…</p></div>
-  <div class="source-note">
-    <span class="active"><strong>Data source:</strong> QS World University Rankings (2024–2027 editions). Only mainland China institutions are shown. Scores and rankings are © QS Quacquarelli Symonds. For reference only.</span>
-  </div>
+  <div class="panel detail" id="uni-panel"><p class="placeholder">Loading…</p></div>
+  <div class="source-note" id="uni-note"></div>
 </div>
 
 <!-- ════════════ SUBJECT BOARD ════════════ -->
 <div id="subject-view" hidden>
   <div class="ctrlbar">
-    <div class="switcher">
-      <button class="active" data-src="moe" onclick="setSource('moe', this)">
-        MoE Evaluation <span class="badge">4th Round</span>
-      </button>
-      <button data-src="qs" onclick="setSource('qs', this)">
-        QS Rankings <span class="badge">by Subject</span>
-      </button>
-    </div>
+    <div class="seg" id="subj-source"></div>
+    <div class="seg" id="subj-year"></div>
+    <div class="spacer"></div>
+    <span class="endpoint-tag" id="subj-endpoint"></span>
   </div>
   <div class="wrap">
     <div class="panel"><h3 id="col1-label">Category</h3><div class="nav-list" id="nav"></div></div>
     <div class="panel"><h3 id="col2-label">Discipline</h3><div class="subj-list" id="subjects"></div></div>
-    <div class="panel detail" id="detail"><p class="placeholder" id="status">Loading data…</p></div>
+    <div class="panel detail" id="detail"><p class="placeholder" id="status">Loading…</p></div>
   </div>
-  <div class="source-note">
-    <span class="active" id="note-moe">
-      <strong>Data source:</strong> Fourth Round of Discipline Evaluation (2016), conducted by the China Academic Degrees and Graduate Education Development Center (CDGDC). For reference only. Results from subsequent evaluation rounds have not been publicly released.
-    </span>
-    <span id="note-qs">
-      <strong>Data source:</strong> QS World University Rankings by Subject 2026. Only mainland China institutions are shown. Scores and rankings are © QS Quacquarelli Symonds. For reference only.
-    </span>
-  </div>
+  <div class="source-note" id="subj-note"></div>
 </div>
 
 <script>
-// ── State ──
-let BOARD  = 'university';   // 'university' | 'subject'
-let SOURCE = 'moe';          // subject board: 'moe' | 'qs'
-let MOE_DATA = null;
-let QS_DATA  = null;
-let UNI_YEAR = null;
+// ═══════════════════════ State & config ═══════════════════════
+let MANIFEST = null;
+let BOARD = 'university';
+const SEL = {                                  // current source/year per board
+  university: { source: 'qs', year: null },
+  subject:    { source: 'cde', year: null },
+};
+const CACHE = {};                              // url -> parsed JSON
 let uniShowDetails = false;
+let qsShowDetails  = false;
 
-// University data comes from its own endpoint (separate from the static eval data).
-const UNI_ENDPOINT = '/api/university-rankings';
-const UNI_FALLBACK = './data/qs_university.json';   // used only if the endpoint is unreachable (e.g. local file preview)
-let   UNI_LOCAL = null;        // full dataset when running in fallback mode
-const UNI_CACHE = {};          // year -> data, when using the endpoint
+// Each distinct dataset has its OWN url endpoint.
+function datasetUrl(board, source, year) {
+  if (board === 'university') return `./data/university/${source}/${year}.json`;
+  return `./data/subject/${source}/index.json`;             // subject sources are single-file
+}
 
-const $nav      = document.getElementById('nav');
-const $subjects = document.getElementById('subjects');
-const $detail   = document.getElementById('detail');
-const $status   = document.getElementById('status');
-const $uniPanel = document.getElementById('uni-panel');
+async function loadJSON(url) {
+  if (CACHE[url]) return CACHE[url];
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${url} → ${r.status}`);
+  return (CACHE[url] = await r.json());
+}
 
-// ── Subject-board datasets (static, unchanged) ──
-Promise.all([
-  fetch('./data/eval.json').then(r => r.json()),
-  fetch('./data/qs_eval.json').then(r => r.json()),
-]).then(([moe, qs]) => {
-  MOE_DATA = moe;
-  QS_DATA  = qs;
-  if (BOARD === 'subject') renderSource();
-}).catch(e => {
-  $status.textContent = 'Failed to load data: ' + e.message;
-});
+const $ = id => document.getElementById(id);
 
-// ── University-board data (via endpoint) ──
-initUniversity();
-
-async function initUniversity() {
-  let years;
+// ═══════════════════════ Boot ═══════════════════════
+(async function init() {
   try {
-    const r = await fetch(UNI_ENDPOINT);
-    if (!r.ok) throw new Error('endpoint ' + r.status);
-    years = (await r.json()).years;
+    MANIFEST = await loadJSON('./data/manifest.json');
   } catch (e) {
-    try {                                   // fallback for static/local preview
-      UNI_LOCAL = await fetch(UNI_FALLBACK).then(r => r.json());
-      years = Object.keys(UNI_LOCAL).sort().reverse();
-    } catch (e2) {
-      if ($uniPanel) $uniPanel.innerHTML = '<p class="placeholder">Failed to load university data.</p>';
-      return;
-    }
+    document.body.innerHTML = '<p style="padding:40px">Failed to load manifest: ' + e.message + '</p>';
+    return;
   }
-  if (!years || !years.length) return;
-  UNI_YEAR = years[0];
-  document.body.classList.add('qs-mode');   // university board defaults to QS-blue theme
-  renderUniYears(years);
+  // defaults from manifest
+  for (const b of ['university', 'subject']) {
+    const bd = MANIFEST.boards[b];
+    SEL[b].source = bd.default_source;
+    SEL[b].year   = bd.sources[bd.default_source].default_year;
+  }
+  buildBoardTabs();
+  applyRoute(parseHash());
+  window.addEventListener('hashchange', () => applyRoute(parseHash()));
+})();
+
+// ── URL hash routing: #board/source/year ──
+function parseHash() {
+  const m = (location.hash || '').replace(/^#/, '').split('/').filter(Boolean);
+  if (!m.length) return null;
+  const [board, source, year] = m;
+  if (!MANIFEST.boards[board]) return null;
+  const bd = MANIFEST.boards[board];
+  const src = bd.sources[source] ? source : bd.default_source;
+  const yr  = (bd.sources[src].years || []).includes(year) ? year : bd.sources[src].default_year;
+  return { board, source: src, year: yr };
+}
+function writeHash() {
+  const s = SEL[BOARD];
+  location.hash = `${BOARD}/${s.source}/${s.year}`;
+}
+function applyRoute(route) {
+  if (route) {
+    BOARD = route.board;
+    SEL[BOARD].source = route.source;
+    SEL[BOARD].year   = route.year;
+  }
+  render();
+}
+
+// ═══════════════════════ Chrome (tabs / segs) ═══════════════════════
+function buildBoardTabs() {
+  const wrap = $('board-tabs');
+  wrap.innerHTML = Object.entries(MANIFEST.boards)
+    .map(([key, b]) => `<button data-board="${key}">${b.label}</button>`).join('');
+  wrap.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+    BOARD = btn.dataset.board;
+    writeHash(); render();
+  }));
+}
+
+function buildSourceSeg(elId, board) {
+  const bd = MANIFEST.boards[board];
+  const cur = SEL[board].source;
+  $(elId).innerHTML = '<span class="seg-label">Source</span>' +
+    Object.entries(bd.sources).map(([key, s]) =>
+      `<button data-source="${key}" class="${key === cur ? 'active' : ''}">${s.label}</button>`).join('');
+  $(elId).querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+    const src = btn.dataset.source;
+    SEL[board].source = src;
+    SEL[board].year   = bd.sources[src].default_year;   // reset year on source change
+    writeHash(); render();
+  }));
+}
+
+function buildYearSeg(elId, board) {
+  const bd = MANIFEST.boards[board];
+  const src = SEL[board].source;
+  const years = bd.sources[src].years || [];
+  const cur = SEL[board].year;
+  const single = years.length <= 1;
+  $(elId).innerHTML = '<span class="seg-label">Year</span>' +
+    years.map(y => `<button data-year="${y}" class="${y === cur ? 'active' : ''}"` +
+      `${single ? ' disabled' : ''}>${y}</button>`).join('');
+  if (single) return;
+  $(elId).querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+    SEL[board].year = btn.dataset.year;
+    writeHash(); render();
+  }));
+}
+
+// ═══════════════════════ Render dispatch ═══════════════════════
+function render() {
+  const src = SEL[BOARD].source;
+  document.body.className = 'src-' + src;
+  document.body.classList.toggle('uni-details', BOARD === 'university' && uniShowDetails);
+  document.body.classList.toggle('qs-details',  BOARD === 'subject' && qsShowDetails);
+
+  // active board tab
+  $('board-tabs').querySelectorAll('button')
+    .forEach(b => b.classList.toggle('active', b.dataset.board === BOARD));
+
+  $('university-view').hidden = BOARD !== 'university';
+  $('subject-view').hidden    = BOARD !== 'subject';
+
   updateIntro();
-  try { await ensureUniYear(UNI_YEAR); } catch (e) {}
-  if (BOARD === 'university') renderUniTable();
-}
 
-// Ensure the data for a given year is available (cached or fetched from the endpoint)
-async function ensureUniYear(year) {
-  if (UNI_LOCAL) return UNI_LOCAL[year];
-  if (UNI_CACHE[year]) return UNI_CACHE[year];
-  const r = await fetch(UNI_ENDPOINT + '?year=' + encodeURIComponent(year));
-  if (!r.ok) throw new Error('endpoint ' + r.status);
-  return (UNI_CACHE[year] = await r.json());
-}
-
-function getUniYear(year) { return UNI_LOCAL ? UNI_LOCAL[year] : UNI_CACHE[year]; }
-
-// ── Board switcher ──
-function setBoard(board, btn) {
-  BOARD = board;
-  document.body.classList.remove('qs-details', 'uni-details');
-  hideQsTip();
-  document.querySelectorAll('.board-tabs button').forEach(b => b.classList.toggle('active', b === btn));
-  document.getElementById('subject-view').hidden    = (board !== 'subject');
-  document.getElementById('university-view').hidden = (board !== 'university');
-  document.body.classList.toggle('qs-mode', board === 'university' || SOURCE === 'qs');
-  updateIntro();
-  renderBoard();
-}
-
-function renderBoard() {
   if (BOARD === 'university') {
-    if (!UNI_YEAR) return;                         // still loading
-    if (getUniYear(UNI_YEAR)) renderUniTable();
-    else ensureUniYear(UNI_YEAR).then(() => { if (BOARD === 'university') renderUniTable(); }).catch(() => {});
+    buildSourceSeg('uni-source', 'university');
+    buildYearSeg('uni-year', 'university');
+    renderUniversity();
   } else {
-    renderSource();
+    buildSourceSeg('subj-source', 'subject');
+    buildYearSeg('subj-year', 'subject');
+    renderSubject();
   }
-}
-
-// ── Subject-board source switcher ──
-function setSource(src, btn) {
-  SOURCE = src;
-  document.body.classList.remove('qs-details');
-  document.querySelectorAll('.switcher button').forEach(b => b.classList.toggle('active', b === btn));
-  document.body.classList.toggle('qs-mode', src === 'qs');
-  updateIntro();
-  renderSource();
 }
 
 function updateIntro() {
-  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  const s = SEL[BOARD], src = s.source, y = s.year;
+  const E = (id, t) => { const el = $(id); if (el) el.textContent = t; };
   if (BOARD === 'university') {
-    set('eyebrow', 'QS World University Rankings · ' + (UNI_YEAR || ''));
-    set('main-title', 'University Rankings — China (Mainland)');
-    set('main-desc', 'QS World University Rankings for mainland China institutions. Pick a year to see the overall standings; toggle Score Details for the underlying indicator scores.');
-  } else if (SOURCE === 'moe') {
-    set('eyebrow', 'Discipline Evaluation · 4th Round');
-    set('main-title', 'Evaluation Results for Colleges and Universities');
-    set('main-desc', 'Choose a broad category, then a discipline, to see institutions ranked by their overall result. Schools sharing a grade are sequenced by institution code.');
-    set('col2-label', 'Discipline');
-    document.getElementById('note-moe').classList.add('active');
-    document.getElementById('note-qs').classList.remove('active');
+    if (src === 'qs') {
+      E('eyebrow', `QS World University Rankings · ${y}`);
+      E('main-title', 'University Rankings — China (Mainland)');
+      E('main-desc', 'QS World University Rankings for mainland China institutions. Pick a year to see the overall standings; toggle Score Details for the underlying indicator scores.');
+    } else {
+      E('eyebrow', `U.S. News Best Global Universities · 2026–2027`);
+      E('main-title', 'University Rankings — China (Mainland)');
+      E('main-desc', 'U.S. News & World Report Best Global Universities for mainland China institutions, by overall Global Score.');
+    }
   } else {
-    set('eyebrow', 'QS World University Rankings by Subject 2026');
-    set('main-title', 'QS Subject Rankings — China (Mainland)');
-    set('main-desc', 'Choose a faculty area, then a subject, to see mainland China institutions in the 2026 QS World University Rankings by Subject.');
-    set('col2-label', 'Subject');
-    document.getElementById('note-moe').classList.remove('active');
-    document.getElementById('note-qs').classList.add('active');
+    if (src === 'cde') {
+      E('eyebrow', 'China Discipline Evaluation · 4th Round (2016)');
+      E('main-title', 'China Discipline Evaluation (CDE) Results');
+      E('main-desc', 'Choose a broad category, then a discipline, to see institutions ranked by their overall result. Schools sharing a grade are sequenced by institution code.');
+      E('col1-label', 'Category'); E('col2-label', 'Discipline');
+    } else if (src === 'qs') {
+      E('eyebrow', 'QS World University Rankings by Subject · 2026');
+      E('main-title', 'QS Subject Rankings — China (Mainland)');
+      E('main-desc', 'Choose a faculty area, then a subject, to see mainland China institutions in the 2026 QS World University Rankings by Subject.');
+      E('col1-label', 'Faculty'); E('col2-label', 'Subject');
+    } else {
+      E('eyebrow', 'U.S. News Best Global Universities by Subject · 2026–2027');
+      E('main-title', 'U.S. News Subject Rankings — China (Mainland)');
+      E('main-desc', 'Choose a subject area, then a subject, to see mainland China institutions in the U.S. News subject rankings, by subject score.');
+      E('col1-label', 'Area'); E('col2-label', 'Subject');
+    }
   }
 }
 
-function renderSource() {
-  if (!MOE_DATA || !QS_DATA) return;
-  if (SOURCE === 'moe') renderMoeNav();
-  else                   renderQsNav();
+function showEndpoint(elId) {
+  const s = SEL[BOARD];
+  $(elId).textContent = datasetUrl(BOARD, s.source, s.year);
 }
 
-// ══════════════════════════════════════════
-// University board
-// ══════════════════════════════════════════
-const UNI_COLS = [
+// ═══════════════════════ helpers ═══════════════════════
+function scoreBar(val, max) {
+  if (val == null) return '';
+  const pct = Math.min(Math.round((val / (max || 100)) * 60), 60);
+  return `<span class="score-bar" style="width:${pct}px"></span>`;
+}
+function rankDelta(a, b) {
+  const parse = v => { const m = String(v ?? '').match(/(\d+)/); return m ? +m[1] : null; };
+  const x = parse(a), y = parse(b);
+  if (x === null || y === null) return '';
+  const d = y - x;
+  if (d > 0) return `<span class="delta up">▲${d}</span>`;
+  if (d < 0) return `<span class="delta down">▼${Math.abs(d)}</span>`;
+  return `<span class="delta same">—</span>`;
+}
+function fmt(v, d = 1) { return v == null ? '—' : (+v).toFixed(d); }
+function fmtInt(v) { return v == null ? '—' : (+v).toLocaleString(); }
+
+// ═══════════════════════ UNIVERSITY board ═══════════════════════
+const QS_UNI_COLS = [
   ['academic', 'Academic'], ['employer', 'Employer'], ['faculty', 'Faculty/Student'],
   ['citations', 'Citations'], ['intl_faculty', "Int'l Faculty"], ['intl_students', "Int'l Students"],
-  ['intl_div', "Int'l Diversity"], ['irn', 'IRN'], ['employment', 'Employment'], ['sustainability', 'Sustainability'],
+  ['irn', 'IRN'], ['employment', 'Employment'], ['sustainability', 'Sustainability'],
 ];
 
-function renderUniYears(years) {
-  const wrap = document.getElementById('uni-years');
-  wrap.innerHTML = years.map(y =>
-    `<button class="${y === UNI_YEAR ? 'active' : ''}" data-year="${y}">${y}</button>`).join('');
-  wrap.querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
-    UNI_YEAR = b.dataset.year;
-    wrap.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
-    updateIntro();
-    try { await ensureUniYear(UNI_YEAR); } catch (e) {}
-    renderUniTable();
-  }));
-  const toggle = document.getElementById('btn-uni-detail');
-  toggle.addEventListener('click', () => {
-    uniShowDetails = !uniShowDetails;
-    renderUniTable();
-  });
+async function renderUniversity() {
+  const s = SEL.university;
+  showEndpoint('uni-endpoint');
+  const panel = $('uni-panel');
+  panel.innerHTML = '<p class="placeholder">Loading…</p>';
+  let data;
+  try { data = await loadJSON(datasetUrl('university', s.source, s.year)); }
+  catch (e) { panel.innerHTML = `<p class="placeholder">Failed to load: ${e.message}</p>`; return; }
+
+  const toggle = $('btn-uni-detail');
+  const hasIndicators = (data.indicators || []).length > 0;
+  toggle.hidden = !hasIndicators;
+  if (hasIndicators && !toggle.dataset.wired) {
+    toggle.dataset.wired = '1';
+    toggle.addEventListener('click', () => { uniShowDetails = !uniShowDetails; render(); });
+  }
+  if (!hasIndicators) uniShowDetails = false;
+
+  $('uni-note').innerHTML = s.source === 'qs'
+    ? '<strong>Data source:</strong> QS World University Rankings (2024–2027 editions). Only mainland China institutions are shown. © QS Quacquarelli Symonds. For reference only.'
+    : '<strong>Data source:</strong> U.S. News & World Report — Best Global Universities, 2026–2027 edition. Only mainland China institutions are shown. For reference only.';
+
+  if (s.source === 'qs') renderUniQS(data, panel);
+  else                   renderUniUSNews(data, panel);
 }
 
-function renderUniTable() {
-  const yd = getUniYear(UNI_YEAR);
-  if (!yd) { $uniPanel.innerHTML = '<p class="placeholder">Loading…</p>'; return; }
-  const cols = UNI_COLS.filter(([k]) => (yd.indicators || []).includes(k));
-  document.body.classList.toggle('uni-details', uniShowDetails);
-
-  const toggle = document.getElementById('btn-uni-detail');
-  toggle.textContent = (uniShowDetails ? '▲ Hide Score Details' : '▼ Show Score Details');
+function renderUniQS(data, panel) {
+  const cols = QS_UNI_COLS.filter(([k]) => (data.indicators || []).includes(k));
+  const toggle = $('btn-uni-detail');
+  toggle.textContent = uniShowDetails ? '▲ Hide Score Details' : '▼ Show Score Details';
   toggle.classList.toggle('on', uniShowDetails);
 
-  const detailHeaders = uniShowDetails
-    ? cols.map(([, label]) => `<th class="score-detail">${label}</th>`).join('') : '';
-
-  const body = yd.list.map(r => {
-    const detailCells = uniShowDetails
-      ? cols.map(([k]) => {
-          const v = r[k];
-          return `<td class="score-detail">${v != null ? v.toFixed(1) : '—'}${scoreBar(v, 100)}</td>`;
-        }).join('') : '';
+  const heads = uniShowDetails ? cols.map(([, l]) => `<th class="score-detail">${l}</th>`).join('') : '';
+  const body = data.list.map(r => {
+    const cells = uniShowDetails ? cols.map(([k]) =>
+      `<td class="score-detail">${fmt(r[k])}${scoreBar(r[k], 100)}</td>`).join('') : '';
     return `<tr>
-      <td class="rank uni-rankcol">#${(r.rank || '—').replace('=', '')}${rankDelta(r.rank, r.prev_rank)}</td>
+      <td class="rank uni-rankcol">#${String(r.rank || '—').replace('=', '')}${rankDelta(r.rank, r.prev_rank)}</td>
       <td class="inst">${r.name}</td>
-      ${detailCells}
-      <td class="score">${r.overall != null ? r.overall.toFixed(1) : '—'}${scoreBar(r.overall, 100)}</td>
+      ${cells}
+      <td class="score">${fmt(r.overall)}${scoreBar(r.overall, 100)}</td>
     </tr>`;
   }).join('');
 
-  $uniPanel.innerHTML = `
-    <div class="loc">◆ QS ${UNI_YEAR} · World University Rankings</div>
+  panel.innerHTML = `
+    <div class="loc">◆ QS ${data.year} · World University Rankings</div>
     <h2>China (Mainland)</h2>
-    <p class="count">${yd.count} mainland China institutions · QS ${UNI_YEAR}</p>
-    <div class="table-scroll">
-    <table>
-      <thead><tr>
-        <th class="center">Rank ${UNI_YEAR}</th>
-        <th>Institution</th>
-        ${detailHeaders}
-        <th class="score-detail">Overall</th>
-      </tr></thead>
+    <p class="count">${data.count} mainland China institutions · QS ${data.year}</p>
+    <div class="table-scroll"><table>
+      <thead><tr><th class="center">Rank ${data.year}</th><th>Institution</th>${heads}
+        <th class="score-detail">Overall</th></tr></thead>
       <tbody>${body}</tbody>
-    </table>
-    </div>`;
+    </table></div>`;
 }
 
-// ══════════════════════════════════════════
-// MoE mode
-// ══════════════════════════════════════════
+function renderUniUSNews(data, panel) {
+  const body = data.list.map(r => `
+    <tr>
+      <td class="rank uni-rankcol">#${r.rank}</td>
+      <td class="inst">${r.name}${r.city ? `<small>${r.city}</small>` : ''}</td>
+      <td class="score">${fmt(r.overall)}${scoreBar(r.overall, 100)}</td>
+      <td class="num">${fmtInt(r.enrollment)}</td>
+    </tr>`).join('');
+  panel.innerHTML = `
+    <div class="loc">◆ U.S. News ${data.edition || data.year} · Best Global Universities</div>
+    <h2>China (Mainland)</h2>
+    <p class="count">${data.count} mainland China institutions · U.S. News ${data.edition || data.year}</p>
+    <div class="table-scroll"><table>
+      <thead><tr><th class="center">Global Rank</th><th>Institution</th>
+        <th class="right">Global Score</th><th class="right">Enrollment</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>`;
+}
+
+// ═══════════════════════ SUBJECT board ═══════════════════════
+async function renderSubject() {
+  const s = SEL.subject;
+  showEndpoint('subj-endpoint');
+  $('nav').innerHTML = ''; $('subjects').innerHTML = '';
+  $('detail').innerHTML = '<p class="placeholder">Loading…</p>';
+  let data;
+  try { data = await loadJSON(datasetUrl('subject', s.source, s.year)); }
+  catch (e) { $('detail').innerHTML = `<p class="placeholder">Failed to load: ${e.message}</p>`; return; }
+
+  $('subj-note').innerHTML = ({
+    cde: '<strong>Data source:</strong> China Discipline Evaluation (CDE) — Fourth Round (2016), conducted by the China Academic Degrees and Graduate Education Development Center (CDGDC). For reference only.',
+    qs:  '<strong>Data source:</strong> QS World University Rankings by Subject 2026. Only mainland China institutions are shown. © QS Quacquarelli Symonds. For reference only.',
+    usnews: '<strong>Data source:</strong> U.S. News Best Global Universities subject rankings, 2026–2027. Only mainland China institutions are shown. For reference only.',
+  })[s.source];
+
+  if (s.source === 'cde')    renderCdeNav(data);
+  else if (s.source === 'qs') renderQsNav(data);
+  else                        renderUsNav(data);
+}
+
+// ── CDE (China Discipline Evaluation) ──
 const GRADE_ORDER = ['A+','A','A-','B+','B','B-','C+','C','C-'];
 const gradeRank = g => { const i = GRADE_ORDER.indexOf(g); return i === -1 ? 99 : i; };
 const tierClass = g => (g && 'ABC'.includes(g[0])) ? g[0] : '';
 
-function renderMoeNav() {
-  $nav.innerHTML = '';
-  Object.entries(MOE_DATA).forEach(([broad, node], i) => {
+function renderCdeNav(CDE) {
+  const $nav = $('nav');
+  Object.entries(CDE).forEach(([broad, node], i) => {
     const b = document.createElement('button');
-    const subjCount = Object.keys(node.subjects || {}).length;
-    b.innerHTML = `${node.name_en || node.name_zh || broad}<span class="subj-count">(${subjCount})</span>`;
-    b.onclick = () => selectMoeBroad(broad, b);
+    const n = Object.keys(node.subjects || {}).length;
+    b.innerHTML = `${node.name_en || node.name_zh || broad}<span class="subj-count">(${n})</span>`;
+    b.onclick = () => selectCdeBroad(CDE, broad, b);
     $nav.appendChild(b);
-    if (i === 0) selectMoeBroad(broad, b);
+    if (i === 0) selectCdeBroad(CDE, broad, b);
   });
 }
-
-function sortedSubjects(node) {
-  return Object.values(node.subjects || {})
+function selectCdeBroad(CDE, broad, btn) {
+  [...$('nav').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  const $subjects = $('subjects'); $subjects.innerHTML = '';
+  const subs = Object.values(CDE[broad].subjects || {})
     .sort((a, b) => (a.secondary_subject_code || '').localeCompare(b.secondary_subject_code || ''));
-}
-
-function selectMoeBroad(broad, btn) {
-  [...$nav.children].forEach(c => c.setAttribute('aria-selected', c === btn));
-  $subjects.innerHTML = '';
-  for (const s of sortedSubjects(MOE_DATA[broad])) {
+  for (const s of subs) {
     const b = document.createElement('button');
     b.innerHTML = `<span class="code">${s.secondary_subject_code}</span>${s.name_en || s.name_zh}<span class="cnt">(${(s.list||[]).length})</span>`;
-    b.onclick = () => selectMoeSubject(s, b);
+    b.onclick = () => selectCdeSubject(s, b);
     $subjects.appendChild(b);
   }
-  $detail.innerHTML = '<p class="placeholder">Select a discipline to view results.</p>';
+  $('detail').innerHTML = '<p class="placeholder">Select a discipline to view results.</p>';
 }
-
-function selectMoeSubject(s, btn) {
-  [...$subjects.children].forEach(c => c.setAttribute('aria-selected', c === btn));
-  const list = s.list || [];
-  const rows = [...list].sort((a, b) => {
+function selectCdeSubject(s, btn) {
+  [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  const rows = [...(s.list || [])].sort((a, b) => {
     const d = gradeRank(a.evaluation_result) - gradeRank(b.evaluation_result);
     return d !== 0 ? d : (a.institution_code || '').localeCompare(b.institution_code || '');
   });
@@ -578,269 +594,148 @@ function selectMoeSubject(s, btn) {
       <td class="code-col">${r.institution_code || ''}</td>
       <td class="inst">${r.institution_name_en || r.institution_name || ''}</td>
     </tr>`).join('')).join('');
-
-  $detail.innerHTML = `
-    <div class="loc">&#9733; ${s.secondary_subject_code} · Overall ranking</div>
+  $('detail').innerHTML = `
+    <div class="loc">★ ${s.secondary_subject_code} · Overall ranking</div>
     <h2>${s.name_en || s.name_zh}</h2>
-    <p class="count">${list.length} institutions evaluated · same grade sequenced by code</p>
-    <table>
-      <thead><tr><th class="center">Result</th><th colspan="2">Institution</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>`;
+    <p class="count">${(s.list||[]).length} institutions evaluated · same grade sequenced by code</p>
+    <table><thead><tr><th class="center">Result</th><th colspan="2">Institution</th></tr></thead>
+      <tbody>${body}</tbody></table>`;
 }
 
-// ══════════════════════════════════════════
-// QS mode
-// ══════════════════════════════════════════
-function renderQsNav() {
-  $nav.innerHTML = '';
-  Object.entries(QS_DATA).forEach(([fcode, fdata], i) => {
+// ── QS subject ──
+function renderQsNav(QS) {
+  const $nav = $('nav');
+  Object.entries(QS).forEach(([fcode, fdata], i) => {
     const b = document.createElement('button');
-    const cnt = Object.keys(fdata.subjects || {}).length;
-    b.innerHTML = `${fdata.name_en}<span class="subj-count">(${cnt})</span>`;
+    const n = Object.keys(fdata.subjects || {}).length;
+    b.innerHTML = `${fdata.name_en}<span class="subj-count">(${n})</span>`;
     b.onclick = () => selectQsFaculty(fcode, fdata, b);
     $nav.appendChild(b);
     if (i === 0) selectQsFaculty(fcode, fdata, b);
   });
 }
-
 function selectQsFaculty(fcode, fdata, btn) {
-  [...$nav.children].forEach(c => c.setAttribute('aria-selected', c === btn));
-  $subjects.innerHTML = '';
-
-  // Faculty-level overview button
+  [...$('nav').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  const $subjects = $('subjects'); $subjects.innerHTML = '';
   const overview = document.createElement('button');
   overview.innerHTML = `<span class="code">${fcode}</span><em>Faculty Overview</em><span class="cnt">(${(fdata.faculty_list||[]).length})</span>`;
   overview.onclick = () => selectQsFacultyOverview(fdata, overview);
   $subjects.appendChild(overview);
-
-  const subjs = Object.values(fdata.subjects || {})
-    .sort((a, b) => a.name_en.localeCompare(b.name_en));
-  for (const s of subjs) {
+  Object.values(fdata.subjects || {}).sort((a, b) => a.name_en.localeCompare(b.name_en)).forEach(s => {
     const b = document.createElement('button');
     b.innerHTML = `<span class="code">${s.qs_code}</span>${s.name_en}<span class="cnt">(${s.list.length})</span>`;
     b.onclick = () => selectQsSubject(fdata.name_en, s, b);
     $subjects.appendChild(b);
-  }
-  $detail.innerHTML = '<p class="placeholder">Select a subject to view rankings.</p>';
-  // Auto-select faculty overview
+  });
   selectQsFacultyOverview(fdata, overview);
 }
-
-function rankDelta(r2026, r2025) {
-  const parse = v => {
-    const s = String(v || '').trim();
-    if (!s || s === 'nan' || s === 'None') return null;
-    const m = s.match(/(\d+)/);
-    return m ? parseInt(m[1]) : null;
-  };
-  const a = parse(r2026), b = parse(r2025);
-  if (a === null || b === null) return '';
-  const d = b - a;
-  if (d > 0) return `<span class="delta up">▲${d}</span>`;
-  if (d < 0) return `<span class="delta down">▼${Math.abs(d)}</span>`;
-  return `<span class="delta same">—</span>`;
-}
-
-function scoreBar(val, max) {
-  if (val == null) return '';
-  const pct = Math.min(Math.round((val / (max || 100)) * 60), 60);
-  return `<span class="score-bar" style="width:${pct}px"></span>`;
-}
-
-// Overall score = weighted blend of the indicator scores (verified to match QS's
-// published scores within 0.05). Used to fill institutions QS left without an
-// official overall score. Weights are renormalised over the indicators present.
-function computeOverall(r, weights) {
-  const SK = { academic: 'academic_score', employer: 'employer_score', citations: 'citations_score', h_index: 'h_index_score', irn: 'irn_score' };
-  let wsum = 0, acc = 0;
-  for (const k in (weights || {})) {
-    const wk = weights[k];
-    if (wk > 0) {
-      const v = r[SK[k]];
-      if (v != null) { acc += v * wk; wsum += wk; }
-    }
-  }
-  return wsum > 0 ? acc / wsum : null;
-}
-
 function selectQsFacultyOverview(fdata, btn) {
-  document.body.classList.remove('qs-details');
-  [...$subjects.children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  qsShowDetails = false; document.body.classList.remove('qs-details');
+  [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
   const list = fdata.faculty_list || [];
-
-  const body = list.map((r, i) => `
-    <tr>
-      <td class="rank">#${r.rank_2026}${rankDelta(r.rank_2026, r.rank_2025)}</td>
+  const body = list.map(r => `
+    <tr><td class="rank">#${r.rank_2026}${rankDelta(r.rank_2026, r.rank_2025)}</td>
       <td class="inst">${r.institution}</td>
-      <td class="score">${r.overall_score != null ? r.overall_score.toFixed(1) : '—'}${scoreBar(r.overall_score, 100)}</td>
-    </tr>`).join('');
-
-  $detail.innerHTML = `
+      <td class="score">${fmt(r.overall_score)}${scoreBar(r.overall_score, 100)}</td></tr>`).join('');
+  $('detail').innerHTML = `
     <div class="loc">◆ ${fdata.name_en} · Faculty Overview</div>
     <h2>${fdata.name_en}</h2>
     <p class="count">${list.length} mainland China institutions · QS 2026</p>
     <div class="faculty-note">Faculty-level aggregate ranking</div>
-    <table>
-      <thead><tr><th class="center">Rank 2026</th><th>Institution</th><th class="center">Score</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>`;
+    <table><thead><tr><th class="center">Rank 2026</th><th>Institution</th><th class="right">Score</th></tr></thead>
+      <tbody>${body}</tbody></table>`;
 }
-
-let _qsSubjectState = null; // { facultyName, s }
-let showDetails = false;
-
-const WEIGHT_LABELS = { academic: 'Academic Reputation', employer: 'Employer Reputation', citations: 'Citations per Paper', h_index: 'H-Index', irn: 'International Research Network' };
-
-function buildWeightTooltip(weights) {
-  if (!weights || !Object.values(weights).some(v => v > 0)) return '';
-  return `<button class="info-btn" type="button" aria-label="Score methodology" title="How the score is calculated"></button>`;
+const QS_SUBJ_COLS = { academic: ['Academic','academic_score'], employer: ['Employer','employer_score'],
+  citations: ['Citations','citations_score'], h_index: ['H-Index','h_index_score'], irn: ['IRN','irn_score'] };
+let _qsState = null;
+function activeQsCols(w) { const all = Object.keys(QS_SUBJ_COLS); return w ? all.filter(k => (w[k]||0) > 0) : all; }
+function wireQsToggle() {
+  const t = $('btn-qs-detail');
+  if (!t) return;
+  t.addEventListener('click', () => {
+    qsShowDetails = !qsShowDetails;
+    document.body.classList.toggle('qs-details', qsShowDetails);
+    $('detail').innerHTML = renderQsSubjectTable(_qsState.facultyName, _qsState.s);
+    wireQsToggle();
+  });
 }
-
-function weightTipHtml(weights) {
-  const rows = Object.entries(weights)
-    .filter(([, v]) => v > 0)
-    .sort((a, b) => b[1] - a[1])
-    .map(([k, v]) => `<div class="w-row"><span>${WEIGHT_LABELS[k] || k}</span><b>${Math.round(v * 100)}%</b></div>`)
-    .join('');
-  return `<div class="tip-arrow"></div>
-    <div class="tip-title">How the score is calculated</div>
-    <p class="tip-lead">Overall score (0–100) is a weighted blend of these QS indicators:</p>
-    ${rows}`;
+function selectQsSubject(facultyName, s, btn) {
+  [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  _qsState = { facultyName, s };
+  $('detail').innerHTML = renderQsSubjectTable(facultyName, s);
+  wireQsToggle();
 }
-
-// Single shared popover, lives on <body> so no ancestor overflow can clip it
-function getQsTip() {
-  let tip = document.getElementById('qs-tip');
-  if (!tip) {
-    tip = document.createElement('div');
-    tip.id = 'qs-tip';
-    document.body.appendChild(tip);
-  }
-  return tip;
-}
-
-function hideQsTip() {
-  const tip = document.getElementById('qs-tip');
-  if (tip) tip.classList.remove('visible');
-  document.querySelectorAll('.info-btn.open').forEach(b => b.classList.remove('open'));
-}
-
-function activeDetailCols(weights) {
-  // Returns which detail columns to show: only those with weight > 0
-  const all = ['academic', 'employer', 'citations', 'h_index', 'irn'];
-  if (!weights) return all;
-  return all.filter(k => (weights[k] || 0) > 0);
-}
-
 function renderQsSubjectTable(facultyName, s) {
-  // Widen the page only while the detail columns are showing
-  document.body.classList.toggle('qs-details', showDetails);
-  const list = s.list || [];
-  const w = s.weights || {};
-  const cols = activeDetailCols(w);
-
-  const COL_LABELS = { academic: 'Academic', employer: 'Employer', citations: 'Citations', h_index: 'H-Index', irn: 'IRN' };
-  const COL_KEYS   = { academic: 'academic_score', employer: 'employer_score', citations: 'citations_score', h_index: 'h_index_score', irn: 'irn_score' };
-
-  const detailHeaders = showDetails
-    ? cols.map(k => `<th class="score-detail">${COL_LABELS[k]}</th>`).join('')
-    : '';
-
-  let anyEstimated = false;
+  document.body.classList.toggle('qs-details', qsShowDetails);
+  const list = s.list || [], w = s.weights || {}, cols = activeQsCols(w);
+  const heads = qsShowDetails ? cols.map(k => `<th class="score-detail">${QS_SUBJ_COLS[k][0]}</th>`).join('') : '';
+  let anyEst = false;
   const body = list.map(r => {
-    const detailCells = showDetails
-      ? cols.map(k => {
-          const val = r[COL_KEYS[k]];
-          return `<td class="score-detail">${val != null ? val.toFixed(1) : '—'}${scoreBar(val, 100)}</td>`;
-        }).join('')
-      : '';
-    const val = r.overall_score;
-    const est = r.estimated === true;
-    if (est && val != null) anyEstimated = true;
-    const scoreTxt = val == null ? '—' : (est ? '≈' + val.toFixed(1) : val.toFixed(1));
-    return `<tr>
-      <td class="rank">#${r.rank_2026}${rankDelta(r.rank_2026, r.rank_2025)}</td>
-      <td class="inst">${r.institution}</td>
-      ${detailCells}
-      <td class="score${est ? ' est' : ''}"${est && val != null ? ' title="Computed from the published indicator weights — not an official QS overall score"' : ''}>${scoreTxt}${scoreBar(val, 100)}</td>
-    </tr>`;
+    const cells = qsShowDetails ? cols.map(k => {
+      const v = r[QS_SUBJ_COLS[k][1]]; return `<td class="score-detail">${fmt(v)}${scoreBar(v, 100)}</td>`; }).join('') : '';
+    const val = r.overall_score, est = r.estimated === true;
+    if (est && val != null) anyEst = true;
+    const txt = val == null ? '—' : (est ? '≈' + val.toFixed(1) : val.toFixed(1));
+    return `<tr><td class="rank">#${r.rank_2026}${rankDelta(r.rank_2026, r.rank_2025)}</td>
+      <td class="inst">${r.institution}</td>${cells}
+      <td class="score${est ? ' est' : ''}">${txt}${scoreBar(val, 100)}</td></tr>`;
   }).join('');
-
-  const tooltipHtml = buildWeightTooltip(w);
-  const toggleLabel = showDetails ? '▲ Hide Score Details' : '▼ Show Score Details';
-
+  const toggleLabel = qsShowDetails ? '▲ Hide Score Details' : '▼ Show Score Details';
   return `
     <div class="loc">◆ ${s.qs_code} · ${facultyName}</div>
     <h2>${s.name_en}</h2>
-    <div class="detail-toolbar">
+    <div class="detail-toolbar" style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <p class="count" style="margin:0">${list.length} mainland China institutions · QS 2026</p>
-      <button class="btn-detail-toggle${showDetails ? ' on' : ''}" id="btn-qs-detail">${toggleLabel}</button>
+      <button class="btn-detail-toggle${qsShowDetails ? ' on' : ''}" id="btn-qs-detail">${toggleLabel}</button>
     </div>
-    ${anyEstimated ? `<p class="est-note">≈ Estimated — overall score computed from the published indicator weights (QS publishes an official overall score only for top-ranked institutions).</p>` : ''}
-    <div class="table-scroll">
-    <table>
-      <thead><tr>
-        <th class="center">Rank 2026</th>
-        <th>Institution</th>
-        ${detailHeaders}
-        <th class="score-detail">
-          <span class="th-score-wrap">Score ${tooltipHtml}</span>
-        </th>
-      </tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-    </div>`;
+    ${anyEst ? '<p class="est-note">≈ Estimated — overall score computed from the published indicator weights (QS publishes an official overall score only for top-ranked institutions).</p>' : ''}
+    <div class="table-scroll"><table>
+      <thead><tr><th class="center">Rank 2026</th><th>Institution</th>${heads}
+        <th class="score-detail">Score</th></tr></thead>
+      <tbody>${body}</tbody></table></div>`;
 }
 
-function _wireQsDetailEvents() {
-  const toggleBtn = document.getElementById('btn-qs-detail');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      hideQsTip();
-      showDetails = !showDetails;
-      if (_qsSubjectState) {
-        $detail.innerHTML = renderQsSubjectTable(_qsSubjectState.facultyName, _qsSubjectState.s);
-        _wireQsDetailEvents();
-      }
-    });
-  }
-  const infoBtn = $detail.querySelector('.info-btn');
-  if (infoBtn) {
-    infoBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      const tip = getQsTip();
-      const isOpen = infoBtn.classList.contains('open');
-      hideQsTip();
-      if (isOpen) return;                       // second click closes
-      const w = (_qsSubjectState && _qsSubjectState.s.weights) || {};
-      tip.innerHTML = weightTipHtml(w);
-      tip.classList.add('visible');             // make visible to measure size
-      const r = infoBtn.getBoundingClientRect();
-      const tw = tip.offsetWidth;
-      let left = r.left + r.width / 2 - tw / 2 + window.scrollX;
-      left = Math.max(8 + window.scrollX, Math.min(left, window.scrollX + document.documentElement.clientWidth - tw - 8));
-      tip.style.left = left + 'px';
-      tip.style.top  = (r.bottom + window.scrollY + 9) + 'px';
-      const arrow = tip.querySelector('.tip-arrow');
-      if (arrow) arrow.style.left = (r.left + r.width / 2 + window.scrollX - left - 6) + 'px';
-      infoBtn.classList.add('open');
-    });
-  }
+// ── US News subject ──
+function renderUsNav(D) {
+  const cats = D.categories;
+  const $nav = $('nav');
+  Object.entries(cats).forEach(([code, cat], i) => {
+    const b = document.createElement('button');
+    const n = Object.keys(cat.subjects || {}).length;
+    b.innerHTML = `${cat.name_en}<span class="subj-count">(${n})</span>`;
+    b.onclick = () => selectUsCat(cat, b);
+    $nav.appendChild(b);
+    if (i === 0) selectUsCat(cat, b);
+  });
 }
-
-// Global dismiss: any click outside the popover/icon closes it
-document.addEventListener('click', e => {
-  if (!e.target.closest('.info-btn') && !e.target.closest('#qs-tip')) hideQsTip();
-});
-window.addEventListener('resize', hideQsTip);
-window.addEventListener('scroll', hideQsTip, true);
-
-function selectQsSubject(facultyName, s, btn) {
-  [...$subjects.children].forEach(c => c.setAttribute('aria-selected', c === btn));
-  _qsSubjectState = { facultyName, s };
-  $detail.innerHTML = renderQsSubjectTable(facultyName, s);
-  _wireQsDetailEvents();
+function selectUsCat(cat, btn) {
+  [...$('nav').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  const $subjects = $('subjects'); $subjects.innerHTML = '';
+  Object.values(cat.subjects || {}).sort((a, b) => a.name_en.localeCompare(b.name_en)).forEach(s => {
+    const b = document.createElement('button');
+    b.innerHTML = `${s.name_en}<span class="cnt">(${s.list.length})</span>`;
+    b.onclick = () => selectUsSubject(cat.name_en, s, b);
+    $subjects.appendChild(b);
+  });
+  $('detail').innerHTML = '<p class="placeholder">Select a subject to view rankings.</p>';
+  const first = $subjects.querySelector('button');
+  if (first) first.click();
+}
+function selectUsSubject(catName, s, btn) {
+  [...$('subjects').children].forEach(c => c.setAttribute('aria-selected', c === btn));
+  const body = (s.list || []).map(r => `
+    <tr><td class="rank">#${r.subject_rank}${r.rank_tied ? '<span class="delta same" title="tied">=</span>' : ''}</td>
+      <td class="inst">${r.institution}${r.city ? `<small>${r.city}</small>` : ''}</td>
+      <td class="score">${fmt(r.subject_score)}${scoreBar(r.subject_score, 100)}</td>
+      <td class="num">${r.global_rank ? '#' + r.global_rank : '—'}</td></tr>`).join('');
+  $('detail').innerHTML = `
+    <div class="loc">◆ ${catName} · U.S. News 2026–2027</div>
+    <h2>${s.name_en}</h2>
+    <p class="count">${(s.list||[]).length} mainland China institutions · U.S. News subject ranking</p>
+    <div class="table-scroll"><table>
+      <thead><tr><th class="center">Subject Rank</th><th>Institution</th>
+        <th class="right">Subject Score</th><th class="right">Global Rank</th></tr></thead>
+      <tbody>${body}</tbody></table></div>`;
 }
 </script>
 </body>
