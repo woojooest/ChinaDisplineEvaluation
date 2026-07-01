@@ -20,10 +20,12 @@ functions/
   api/health.js                      sample API                      -> /api/health
   api/rankings/[[path]].js           rankings API (one URL per dataset)
 
-data/sources/                        canonical processed build inputs (committed)
+data/sources/                        canonical processed build inputs (local only, gitignored)
   qs_university.json                 QS university per-year + indicators
   cde_subject_eval.json              CDE 4th round (2016)
   qs_subject.json                    QS subject rankings
+  the_university.json                Times Higher Education university rankings
+  the_subject.json                   Times Higher Education subject rankings
 raw_data/                            ORIGINAL collected data (gitignored): QS xlsx, U.S. News, ...
 data/the/                            Times Higher Education raw pulls (not yet used by the site)
 archive/                             superseded / intermediate files, kept for reference
@@ -33,7 +35,11 @@ scripts/build_display_data.py        rebuilds public/eval/data/** from data/sour
 Every distinct dataset (board × source × year) loads from its own URL, both as a
 static file under `data/...` and via `/api/rankings/<board>/<source>/<year>`.
 
-Rebuild the published data after changing any input:
+Only the published site/API code, README, and final data under
+`public/eval/data/` are intended for GitHub. Source, raw, archived, and report
+data are kept locally and ignored by Git.
+
+Rebuild the published data locally after changing any input:
 
 ```bash
 python3 scripts/build_display_data.py
